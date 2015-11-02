@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "tree23.h"
 
 #define GET 2
@@ -38,24 +39,34 @@ static bool success(bool val, int op) {
 }
 
 /*
- * Wraps a region of memory to write values for that is utilized by the
+ * Wraps a region of memory to write values to that is utilized by the
  * tree.
- * free: a flag that tells grabmem whether it needs to free
- *
- * HMMM...idea. Wrap this and "freemem" in a struct that can emulate
- * a class instead, using function pointers for passing in the
- * buffer variable... is that even possible? I'll find out!
+ * This might seem a little weird, but it's a simpler alternative
+ * to emulating a class with a struct.
+ * free: a flag that tells grabmem whether it needs to free the tree's
+ * memory.
+ * Returns: a pointer to a node-sized region of memory.
  */
-static node * grabmem(bool free) {
+node * modmem(bool del) {
    static uint64_t buf_size = 8192; //Beginning size
-   static node * mem_buf = malloc(sizeof(node) * buf_size);
+   static node * mem_buf = NULL; //malloc(sizeof(node) * buf_size);
+   //Initialize first-time use of mem_buf.
+   mem_buf = mem_buf == NULL ? malloc(sizeof(node) * buf_size) : mem_buf;
    //Index into the buffer that provides data to pointers.
    static uint64_t buf_ndx = 0; 
    uint64_t temp = buf_ndx;
-   buf_ndx++;
-   if (buf_ndx > buf_size) {
-      buf_size *= 2;
-      realloc(
+   if (del == false) {
+      //Can't change the index after returning, so save the old value.
+      uint64_t temp = buf_ndx++;
+      if (buf_ndx > buf_size) {
+         buf_size *= 2;
+         mem_buf = realloc(mem_buf, buf_size * sizeof(node));
+      }
+      return mem_buf + temp;
    }
-   
+   else {
+      memset(mem_buf, '\0', sizeof(node) * buf_size);
+      free(mem_buf);
+      return NULL;
+   }
 }
