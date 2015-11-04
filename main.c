@@ -8,5 +8,11 @@
  * Simply tests the 2-3 tree functions I've implemented.
  */
 int main(int argc, char * argv[]) {
+   tree * t = create();
+   insert(5, t);
+   insert(6, t);
+   insert(7, t);
+   node * root = t->root;
+   treeprint(root);
    return 0;
 }
