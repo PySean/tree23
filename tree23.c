@@ -115,7 +115,7 @@ void treeprint(node * root) {
       treeprint(root->left);
    printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
    if (root->middle != NULL)
-      treeprint(root->right);
+      treeprint(root->middle);
    if (root->right != NULL)
       treeprint(root->right);
 }
@@ -162,7 +162,7 @@ static void minsert(float val, node * n, direction dir) {
             case right:
                new_node->ldata = n->ldata;
                n->ldata = n->rdata;
-               // (#): Ditto.
+               //As above, unconditional pointer xfer.
                new_node->left = n->left;
                new_node->right = n->middle;
                n->left = n->mid_right;
@@ -178,8 +178,6 @@ static void minsert(float val, node * n, direction dir) {
       }
       n->mdata = 0; //Clean up temp value storage.
    }
-
-
 }
 
 /*
