@@ -21,7 +21,8 @@ typedef enum f {
 }fetch_style;
 
 static void minsert(float val, node * n, direction dir);
-static void swap(float * one, float * two);
+static void simpleswap(float val, node * n);
+static void swapsort(float val, node * n);
 static node * modmem(fetch_style f);
 /*
  * "tree23.c", by Sean Soderman
@@ -42,6 +43,9 @@ tree * create() {
 /*
  * Takes the value "val" and inserts it into the tree.
  * Grows at the root if necessary.
+ * TODO: The assumption that a value is empty if it == 0 is weak.
+ * I should define a boolean field within the struct to really determine
+ * whether a spot is taken or not.
  */
 void insert(float val, tree * root) {
    node * n = root->root;
@@ -81,21 +85,10 @@ void insert(float val, tree * root) {
       root->root = new_root;
    }
    //Initial case of inserting data: a full root node with no children.
-   //TODO: Just swap val into the node and then do the typical operations.
    else if (n->ldata && n->rdata) {
       node * new_root = modmem(GET);
       new_root->left = n;
-      if (val > n->ldata && val <= n->rdata) {
-         n->mdata = val;
-      }
-      else if (val <= n->ldata) {
-         n->mdata = n->ldata;
-         n->ldata = val;
-      }
-      else {
-         n->mdata = n->rdata;
-         n->rdata = val;
-      }
+      swapsort(val, n);
       node * new_right = modmem(GET);
       n->parent = new_root;
       new_right->parent = new_root;
@@ -109,12 +102,9 @@ void insert(float val, tree * root) {
    else if (!(n->ldata || n->rdata)) {
       n->ldata = val;
    }
-   else if (val <= n->ldata) {
-      n->rdata = n->ldata;
-      n->ldata = val;
-   }
-   else if (val > n->ldata)
-      n->rdata = val;
+   else 
+      simpleswap(val, n);
+
 }
 
 /*
@@ -133,18 +123,94 @@ void treeprint(node * root) {
 //Helper function for insert. Does all the heavy lifting save for growth
 //at the root node, which is reserved for insert itself.
 static void minsert(float val, node * n, direction dir) {
-   
-   
+   //Shameless copy from insert. The logic is identical...
+   if (n->left || n->right) { //If I am a 2 or 3 node w/ children.
+      if (val < n->ldata) {
+         minsert(val, n->left, left);
+      }
+      else if (n->middle != NULL && val < n->rdata) {
+         minsert(val, n->middle, middle);
+      }
+      else {
+         minsert(val, n->right, right);
+      }
+   }
+   else if (n->ldata && !n->rdata) { //I am a leaf 2-node
+      simpleswap(val, n);
+   }
+   else { //I am a leaf 3-node and I'm ready to overflow!
+      swapsort(val, n);
+   }
+   //The node has overflowed! Split accordingly.
+   if (n->ldata && n->mdata && n->rdata) {
+      node * parent = n->parent;
+      float promoted_val = n->mdata;
+      if (parent->ldata && !parent->rdata) { //Parent is a 2-node
+         simpleswap(promoted_val, parent);
+         node * new_node = modmem(GET);
+         new_node->parent = parent;
+         parent->middle = new_node;
+         switch(dir) {
+            case left:
+               new_node->ldata = n->rdata;
+               //Transfer pointers unconditionally, since it wouldn't hurt
+               //either way (#)
+               new_node->left = n->mid_right;
+               new_node->right = n->right;
+               n->right = n->middle;
+               break;
+            case right:
+               new_node->ldata = n->ldata;
+               n->ldata = n->rdata;
+               // (#): Ditto.
+               new_node->left = n->left;
+               new_node->right = n->middle;
+               n->left = n->mid_right;
+               break;
+         }
+         n->mid_right = NULL;
+         n->middle = NULL;
+         n->rdata = 0;
+      }
+      else { //Parent is a 3-node.
+         swapsort(promoted_val, parent);
+         node * new_node = modmem(GET);
+      }
+      n->mdata = 0; //Clean up temp value storage.
+   }
+
+
 }
 
 /*
- * Swaps two values.
- * I'll be doing this a lot, so it is helpful.
+ * Swaps 'val' into the 2-node in such a way that 
+ * the left value is smaller than (or equal to) the right one.
  */
-static void swap(float * one, float * two) {
-   float temp = *one;
-   *one = *two;
-   *two = temp;
+static void simpleswap(float val, node * n) {
+   if (val > n->ldata)
+      n->rdata = val;
+   else {
+      n->rdata = n->ldata;
+      n->ldata = val;
+   }
+}
+/*
+ * Swaps 'val' into the 3-node in such a way that 
+ * the values in the node are in sorted order (from left to right).
+ * Should only be used on filled up nodes.
+ */
+static void swapsort(float val, node * n) {
+      if (val > n->ldata && val <= n->rdata) {
+         n->mdata = val;
+      }
+      else if (val <= n->ldata) {
+         n->mdata = n->ldata;
+         n->ldata = val;
+      }
+      else {
+         n->mdata = n->rdata;
+         n->rdata = val;
+      }  
 }
 
 /*
