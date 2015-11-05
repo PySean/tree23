@@ -72,7 +72,7 @@ void insert(float val, tree * root) {
       //Have the new root point to the old one.
       new_root->left = n;
       //Create the new right branch of the tree as well. Migrate 
-      //the proper pointers over.
+      //the proper pointers over (including the parent pointers!)
       node * new_right = modmem(GET);
       new_root->right = new_right;
       new_right->parent = new_root;
@@ -83,6 +83,9 @@ void insert(float val, tree * root) {
       n->right = n->middle;
       n->middle = NULL;
       n->mid_right = NULL;
+      //Have grandchild parent pointers point to new right node.
+      new_right->left->parent = new_right;
+      new_right->right->parent = new_right;
       root->root = new_root;
    }
    //Initial case of inserting data: a full root node with no children.
@@ -145,13 +148,19 @@ static void minsert(float val, node * n, direction dir) {
    }
    else { //I am a leaf 3-node and I'm ready to overflow!
       swapsort(val, n);
+      fprintf(stderr, "ldata: %f mdata: %f rdata: %f\n", 
+      n->ldata, n->mdata, n->rdata);
    }
    //The node has overflowed! Split accordingly.
    if (n->ldata && n->mdata && n->rdata) {
       node * parent = n->parent;
       float promoted_val = n->mdata;
       if (parent->ldata && !parent->rdata) { //Parent is a 2-node
+         fprintf(stderr,"Inside overflow case for 2-nodes\n");
          simpleswap(promoted_val, parent);
+         //TODO: I'm on the wrong side of the tree! How did that happen...?
+         fprintf(stderr, "parent ldata: %f rdata: %f\n", 
+         parent->ldata, parent->rdata);
          node * new_node = modmem(GET);
          new_node->parent = parent;
          parent->middle = new_node;
@@ -178,6 +187,7 @@ static void minsert(float val, node * n, direction dir) {
          n->rdata = 0;
       }
       else { //Parent is a 3-node.
+         fprintf(stderr,"Inside overflow case for 3-nodes\n");
          swapsort(promoted_val, parent);
          node * new_node = modmem(GET);
          new_node->parent = parent;
@@ -209,7 +219,7 @@ static void minsert(float val, node * n, direction dir) {
          n->rdata = 0;
          n->middle = NULL;
          n->mid_right = NULL;
-         //TODO: This code here is fine. Something happened at the top.
+         /*
          fprintf(stderr, "At the end of the 3-node case. Data follows:\n");
          fprintf(stderr, "Parent node values: %f:%f:%f\n", parent->ldata,
                  parent->mdata, parent->rdata);
@@ -217,6 +227,7 @@ static void minsert(float val, node * n, direction dir) {
                  parent->left->ldata, parent->middle->ldata,
                  parent->mid_right->ldata, parent->right->ldata);
          fprintf(stderr, "Current node: %f\n", n->ldata);
+         */
       }
       n->mdata = 0; //Clean up temp value storage.
    }
