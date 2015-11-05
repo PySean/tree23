@@ -61,7 +61,8 @@ void insert(float val, tree * root) {
       }
    }
    //The root is a temp-4 node w/children, grow a new root and right node.
-   else if (n->mid_right && n->mdata) {
+   if (n->mid_right && n->mdata) {
+      fprintf(stderr, "Temp 4 node split growth\n");
       //Create new root, have old root's parent ptr point to it.
       //Make sure to clear out the middle data as well.
       node * new_root = modmem(GET);
@@ -85,7 +86,8 @@ void insert(float val, tree * root) {
       root->root = new_root;
    }
    //Initial case of inserting data: a full root node with no children.
-   else if (n->ldata && n->rdata) {
+   else if (n->ldata && n->rdata && n->left == NULL) {
+      fprintf(stderr, "Initial split growth\n");
       node * new_root = modmem(GET);
       new_root->left = n;
       swapsort(val, n);
@@ -99,11 +101,14 @@ void insert(float val, tree * root) {
       n->rdata = 0;
       root->root = new_root;
    }
-   else if (!(n->ldata || n->rdata)) {
+   else if (!(n->ldata || n->rdata) && n->left == NULL) {
+      fprintf(stderr, "Filling up empty root.\n");
       n->ldata = val;
    }
-   else 
+   else if (!n->rdata && n->left == NULL) {
+      fprintf(stderr, "Root has empty spot, swapping value in.\n");
       simpleswap(val, n);
+   }
 
 }
 
