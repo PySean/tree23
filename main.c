@@ -14,6 +14,8 @@ int main(int argc, char * argv[]) {
    insert(7, t);
    insert(4, t);
    insert(3, t);
+   insert(10, t);
+   insert(50, t);
    node * root = t->root;
    treeprint(root);
    return 0;

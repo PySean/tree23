@@ -154,7 +154,7 @@ static void minsert(float val, node * n, direction dir) {
             case left:
                new_node->ldata = n->rdata;
                //Transfer pointers unconditionally, since it wouldn't hurt
-               //either way (#)
+               //either way
                new_node->left = n->mid_right;
                new_node->right = n->right;
                n->right = n->middle;
@@ -175,6 +175,43 @@ static void minsert(float val, node * n, direction dir) {
       else { //Parent is a 3-node.
          swapsort(promoted_val, parent);
          node * new_node = modmem(GET);
+         new_node->parent = parent;
+         switch(dir) {
+            case left: //Rearrange for left
+               parent->mid_right = parent->middle;
+               parent->middle = new_node;
+               new_node->ldata = n->rdata;
+               new_node->left = n->mid_right;
+               new_node->right = n->right;
+               n->right = n->middle;
+               break;
+            case middle: //Rearrange for middle
+               parent->mid_right = new_node;
+               new_node->ldata = n->rdata;
+               new_node->left = n->mid_right;
+               new_node->right = n->right;
+               n->right = n->middle;
+               break;
+            case right: //Rearrange for right
+               parent->mid_right = new_node;
+               new_node->ldata = n->ldata;
+               n->ldata = n->rdata;
+               new_node->left = n->left;
+               new_node->right = n->middle;
+               n->left = n->mid_right;
+               break;
+         }
+         n->rdata = 0;
+         n->middle = NULL;
+         n->mid_right = NULL;
+         //TODO: This code here is fine. Something happened at the top.
+         fprintf(stderr, "At the end of the 3-node case. Data follows:\n");
+         fprintf(stderr, "Parent node values: %f:%f:%f\n", parent->ldata,
+                 parent->mdata, parent->rdata);
+         fprintf(stderr, "Left: %f Middle: %f Midright: %f Right: %f\n",
+                 parent->left->ldata, parent->middle->ldata,
+                 parent->mid_right->ldata, parent->right->ldata);
+         fprintf(stderr, "Current node: %f\n", n->ldata);
       }
       n->mdata = 0; //Clean up temp value storage.
    }
