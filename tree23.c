@@ -61,13 +61,14 @@ void insert(float val, tree * root) {
       }
    }
    //The root is a temp-4 node w/children, grow a new root and right node.
-   if (n->mid_right && n->mdata) {
+   if (n->is4node && n->mid_right) {
       fprintf(stderr, "Temp 4 node split growth\n");
       //Create new root, have old root's parent ptr point to it.
       //Make sure to clear out the middle data as well.
       node * new_root = modmem(GET);
       n->parent = new_root;
       new_root->ldata = n->mdata;
+      new_root->is2node = true;
       n->mdata = 0;
       //Have the new root point to the old one.
       new_root->left = n;
@@ -77,7 +78,11 @@ void insert(float val, tree * root) {
       new_root->right = new_right;
       new_right->parent = new_root;
       new_right->ldata = n->rdata;
+      new_right->is2node = true;
       n->rdata = 0;
+      n->is4node = false;
+      n->is3node = false;
+      n->is2node = true;
       new_right->left = n->mid_right;
       new_right->right = n->right;
       n->right = n->middle;
@@ -89,7 +94,7 @@ void insert(float val, tree * root) {
       root->root = new_root;
    }
    //Initial case of inserting data: a full root node with no children.
-   else if (n->ldata && n->rdata && n->left == NULL) {
+   else if (n->is3node && n->left == NULL) {
       fprintf(stderr, "Initial split growth\n");
       node * new_root = modmem(GET);
       new_root->left = n;
@@ -98,17 +103,22 @@ void insert(float val, tree * root) {
       n->parent = new_root;
       new_right->parent = new_root;
       new_root->ldata = n->mdata;
+      new_root->is2node = true;
       n->mdata = 0;
       new_root->right = new_right;
       new_right->ldata = n->rdata;
+      new_right->is2node = true;
       n->rdata = 0;
+      n->is3node = false;
+      n->is2node = true;
       root->root = new_root;
    }
-   else if (!(n->ldata || n->rdata) && n->left == NULL) {
+   else if (n->is2node != true && n->left == NULL) {
       fprintf(stderr, "Filling up empty root.\n");
       n->ldata = val;
+      n->is2node = true;
    }
-   else if (!n->rdata && n->left == NULL) {
+   else if (n->is2node && n->left == NULL) {
       fprintf(stderr, "Root has empty spot, swapping value in.\n");
       simpleswap(val, n);
    }
@@ -143,22 +153,22 @@ static void minsert(float val, node * n, direction dir) {
          minsert(val, n->right, right);
       }
    }
-   else if (n->ldata && !n->rdata) { //I am a leaf 2-node
+   else if (n->is2node && n->left == NULL) { //I am a leaf 2-node
       simpleswap(val, n);
    }
    else { //I am a leaf 3-node and I'm ready to overflow!
       swapsort(val, n);
+      n->is4node = true;
       fprintf(stderr, "ldata: %f mdata: %f rdata: %f\n", 
       n->ldata, n->mdata, n->rdata);
    }
    //The node has overflowed! Split accordingly.
-   if (n->ldata && n->mdata && n->rdata) {
+   if (n->is4node) {
       node * parent = n->parent;
       float promoted_val = n->mdata;
-      if (parent->ldata && !parent->rdata) { //Parent is a 2-node
+      if (parent->is2node) { //Parent is a 2-node
          fprintf(stderr,"Inside overflow case for 2-nodes\n");
          simpleswap(promoted_val, parent);
-         //TODO: I'm on the wrong side of the tree! How did that happen...?
          fprintf(stderr, "parent ldata: %f rdata: %f\n", 
          parent->ldata, parent->rdata);
          node * new_node = modmem(GET);
@@ -185,10 +195,12 @@ static void minsert(float val, node * n, direction dir) {
          n->mid_right = NULL;
          n->middle = NULL;
          n->rdata = 0;
+         new_node->is2node = true;
       }
       else { //Parent is a 3-node.
          fprintf(stderr,"Inside overflow case for 3-nodes\n");
          swapsort(promoted_val, parent);
+         parent->is4node = true;
          node * new_node = modmem(GET);
          new_node->parent = parent;
          switch(dir) {
@@ -219,6 +231,7 @@ static void minsert(float val, node * n, direction dir) {
          n->rdata = 0;
          n->middle = NULL;
          n->mid_right = NULL;
+         new_node->is2node = true;
          /*
          fprintf(stderr, "At the end of the 3-node case. Data follows:\n");
          fprintf(stderr, "Parent node values: %f:%f:%f\n", parent->ldata,
@@ -230,6 +243,9 @@ static void minsert(float val, node * n, direction dir) {
          */
       }
       n->mdata = 0; //Clean up temp value storage.
+      n->is2node = true;
+      n->is3node = false;
+      n->is4node = false;
    }
 }
 
@@ -244,6 +260,8 @@ static void simpleswap(float val, node * n) {
       n->rdata = n->ldata;
       n->ldata = val;
    }
+   n->is2node = false;
+   n->is3node = true;
 }
 /*
  * Swaps 'val' into the 3-node in such a way that 

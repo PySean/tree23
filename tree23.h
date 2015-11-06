@@ -26,7 +26,9 @@ typedef struct n {
    float ldata;
    float mdata;
    float rdata;
-   bool isfull;
+   bool is2node;
+   bool is3node;
+   bool is4node;
 }node;
 
 typedef struct t {
