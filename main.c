@@ -9,17 +9,8 @@
  */
 int main(int argc, char * argv[]) {
    tree * t = create();
-   insert(5, t);
-   insert(6, t);
-   insert(7, t);
-   insert(4, t);
-   insert(3, t);
-   insert(10, t);
-   insert(2, t);
-   insert(21, t);
-   insert(47, t);
    int i = 1;
-   for (i; i < 300; i++)
+   for (i; i < 9001; i++) //Works!
       insert(i, t);
    node * root = t->root;
    treeprint(root);
@@ -36,5 +27,6 @@ int main(int argc, char * argv[]) {
            z[rchild == rchildparent]); 
    fprintf(stderr, "lchild == lchild parent? %s\n",
            z[lchild == lchildparent]);
+   deltree(t);
    return 0;
 }

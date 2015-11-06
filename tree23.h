@@ -39,6 +39,9 @@ typedef struct t {
 //Simply creates and initializes a 2-3 tree.
 tree * create();
 
+//Deletes and clears all data set by the tree.
+void deltree(tree * root);
+
 //Inserts a value into the tree.
 void insert(float val, tree * root);
 
@@ -47,3 +50,4 @@ void rmval(float val, tree * root);
 
 //Prints all values of the tree out, in order, using a depth-first traversal.
 void treeprint(node * root);
+
