@@ -10,10 +10,17 @@
 int main(int argc, char * argv[]) {
    tree * t = create();
    int i = 1;
-   for (i; i < 9001; i++) //Works!
-      insert(i, t);
+   /*
+   insert(20, t);
+   insert(500, t);
+   insert(5, t);
+   insert(21, t);
+   */
+   for (i; i < 100000; i++)
+      insert(i % 5, t);
    node * root = t->root;
    treeprint(root);
+   /*
    fprintf(stderr, "root val: %f left val: %f right val %f\n",
            root->ldata, root->left->ldata, root->right->ldata);
    char * z[2] = {"no", "yes"};
@@ -27,6 +34,7 @@ int main(int argc, char * argv[]) {
            z[rchild == rchildparent]); 
    fprintf(stderr, "lchild == lchild parent? %s\n",
            z[lchild == lchildparent]);
+   */
    deltree(t);
    return 0;
 }

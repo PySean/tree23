@@ -7,6 +7,7 @@
  * "tree23.c", by Sean Soderman
  * Implementation of all necessary 2-3 tree functions, as well as
  * auxiliary "helper" functions to cut down on redundant code.
+ * TODO: Need "delete" function, along with proper mem allocation for deletes.
  */
 
 /*
@@ -24,7 +25,8 @@ typedef enum dir {
  */
 typedef enum f {
    GET,
-   FREE
+   FREE,
+   DEL
 }fetch_style;
 
 //Inserts val into the tree pointed to by n.
@@ -34,21 +36,21 @@ static void simpleswap(float val, node * n);
 //Turns n into a 3-node by inserting val into it.
 static void swapsort(float val, node * n);
 //Function that encompasses (almost) all memory management the tree needs.
-static node * modmem(fetch_style f);
+static node * modmem(fetch_style f, node * node_to_clear);
 
 /*
  * Handles the initialization of the tree.
  */
 tree * create() {
    tree * seed = malloc(sizeof(tree));
-   seed->root = modmem(GET);
+   seed->root = modmem(GET, NULL);
    return seed;
 }
 /*
  * Takes care of the deletion of the entire tree, including the tree struct.
  */
 void deltree(tree * root) {
-  (void)modmem(FREE);
+  (void)modmem(FREE, NULL);
   memset(root, '\0', sizeof(root));
   free(root);
 }
@@ -74,7 +76,7 @@ void insert(float val, tree * root) {
       //fprintf(stderr, "Temp 4 node split growth\n");
       //Create new root, have old root's parent ptr point to it.
       //Make sure to clear out the middle data as well.
-      node * new_root = modmem(GET);
+      node * new_root = modmem(GET, NULL);
       n->parent = new_root;
       new_root->ldata = n->mdata;
       new_root->is2node = true;
@@ -83,7 +85,7 @@ void insert(float val, tree * root) {
       new_root->left = n;
       //Create the new right branch of the tree as well. Migrate 
       //the proper pointers over (including the parent pointers!)
-      node * new_right = modmem(GET);
+      node * new_right = modmem(GET, NULL);
       new_root->right = new_right;
       new_right->parent = new_root;
       new_right->ldata = n->rdata;
@@ -105,10 +107,10 @@ void insert(float val, tree * root) {
    //Initial case of inserting data: a full root node with no children.
    else if (n->is3node && n->left == NULL) {
       //fprintf(stderr, "Initial split growth\n");
-      node * new_root = modmem(GET);
+      node * new_root = modmem(GET, NULL);
       new_root->left = n;
       swapsort(val, n);
-      node * new_right = modmem(GET);
+      node * new_right = modmem(GET, NULL);
       n->parent = new_root;
       new_right->parent = new_root;
       new_root->ldata = n->mdata;
@@ -180,7 +182,7 @@ static void minsert(float val, node * n, direction dir) {
          simpleswap(promoted_val, parent);
          //fprintf(stderr, "parent ldata: %f rdata: %f\n", 
          //parent->ldata, parent->rdata);
-         node * new_node = modmem(GET);
+         node * new_node = modmem(GET, NULL);
          new_node->parent = parent;
          parent->middle = new_node;
          switch(dir) {
@@ -210,7 +212,7 @@ static void minsert(float val, node * n, direction dir) {
          //fprintf(stderr,"Inside overflow case for 3-nodes\n");
          swapsort(promoted_val, parent);
          parent->is4node = true;
-         node * new_node = modmem(GET);
+         node * new_node = modmem(GET, NULL);
          new_node->parent = parent;
          switch(dir) {
             case left: //Rearrange for left
@@ -301,19 +303,29 @@ static void swapsort(float val, node * n) {
  * Returns: a pointer to a node-sized region of memory, or NULL
  * if f is set to FREE.
  * TODO: Add buffer for cleared nodes from delete function that can
- * be reused on later "GET requests".
+ * be reused on later "GET requests". Return mem addresses from this
+ * buffer until it's empty, of course. And have it grow if it gets too big.
+ * *MIGHT* want to group all the buffers up into a "tribuffer" or something
+ * for organizational purposes. I'll have three different buffers with
+ * three different offsets, otherwise.
  */
-static node * modmem(fetch_style f) {
+static node * modmem(fetch_style f, node * node_to_clear) {
    static uint64_t buf_size = 8192; //Beginning size
    //The current memory buffer utilised by the program.
    static node * mem_buf = NULL;
    static uint64_t buf_ndx = 0; 
    //Contains all memory buffers allocated by the program.
-   //This obviates the use of "realloc", which ruins everything.
+   //This obviates the use of "realloc", which can render all
+   //tree node pointers useless.
    static node ** buffers = NULL;
    static uint64_t buffers_len = 8192;
-   static uint64_t buffers_ndx = 1;
-   //Initialize first-time use of mem_buf.
+   static uint64_t buffers_ndx = 0;
+   //The buffer which stores pointers to nodes cleared by the delnode
+   //function.
+   static node ** delbuf = NULL;
+   static uint64_t delbuf_len = 8192;
+   static uint64_t delbuf_ndx = 0;
+   //Initialize first-time use of mem_buf, as well as aux. buffers.
    if (mem_buf == NULL) {
       mem_buf = malloc(sizeof(node) * buf_size);
       memset(mem_buf, '\0', sizeof(node) * buf_size);
@@ -321,18 +333,24 @@ static node * modmem(fetch_style f) {
       //reallocs for this array of node pointers.
       buffers = malloc(sizeof(node *) * buffers_len);
       buffers[0] = mem_buf;
+      delbuf = malloc(sizeof(node *) * delbuf_len);
    }
-   //mem_buf = mem_buf == NULL ? malloc(sizeof(node) * buf_size) : mem_buf;
    //Index into the buffer that provides data to pointers.
    if (f == GET) {
       //Can't change the index after returning, so save the old value.
-      uint64_t temp = buf_ndx++;
+      uint64_t temp = 0;//buf_ndx++;
+      //Return a previously cleared node pointer if there are any left in the
+      //buffer filled with them.
+      if (delbuf_ndx > 0) {
+         return delbuf[--delbuf_ndx];
+      }
+      temp = buf_ndx++;
       if (buf_ndx > buf_size) {
-         uint64_t tmp_sz = buf_size;
+         //uint64_t tmp_sz = buf_size;
          buf_size *= 2;
          mem_buf = malloc(sizeof(node) * buf_size);
          memset(mem_buf, '\0', sizeof(node) * buf_size);
-         buffers[buffers_ndx++] = mem_buf;
+         buffers[++buffers_ndx] = mem_buf;
          if (buffers_ndx > buffers_len) {
             buffers_len *= 2;
             //Not going to bother using memset here, as the memory is
@@ -344,21 +362,37 @@ static node * modmem(fetch_style f) {
       }
       return mem_buf + temp;
    }
+   //A call to delnode was made, clear up the passed in address's data
+   //and add its address to the "free" buffer.
+   else if (f == DEL) {
+      if (node_to_clear == NULL) {
+         fprintf(stderr, "Please pass in a valid address to clear.\n");
+         return NULL;
+      }
+      delbuf[delbuf_ndx++] = node_to_clear;
+      memset(node_to_clear, '\0', sizeof(node));
+      return NULL;
+   }
    //Return everything to its initial state, free all buffers.
    else if (f == FREE) {
       uint64_t i = 0;
-      for (i; i < buffers_ndx; i++) {
-         memset(buffers[i], '\0', sizeof(node));
+      for (i; i <= buffers_ndx; i++) {
+         memset(buffers[i], '\0', sizeof(node) * 8192 * (i + 1));
          free(buffers[i]);
       }
       memset(buffers, '\0', sizeof(node *) * buffers_len);
       free(buffers);
+      memset(delbuf, '\0', sizeof(node *) * delbuf_len);
+      free(delbuf);
       buf_size = 8192;
       mem_buf = NULL;
       buf_ndx = 0;
       buffers = NULL;
       buffers_len = 8192;
-      buffers_ndx = 1;
+      buffers_ndx = 0;
+      delbuf = NULL;
+      delbuf_len = 8192;
+      delbuf_ndx = 0;
       return NULL;
    }
 }
