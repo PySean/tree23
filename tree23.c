@@ -243,21 +243,19 @@ static void minsert(float val, node * n, direction dir) {
          n->middle = NULL;
          n->mid_right = NULL;
          new_node->is2node = true;
-         /*
-         fprintf(stderr, "At the end of the 3-node case. Data follows:\n");
-         fprintf(stderr, "Parent node values: %f:%f:%f\n", parent->ldata,
-                 parent->mdata, parent->rdata);
-         fprintf(stderr, "Left: %f Middle: %f Midright: %f Right: %f\n",
-                 parent->left->ldata, parent->middle->ldata,
-                 parent->mid_right->ldata, parent->right->ldata);
-         fprintf(stderr, "Current node: %f\n", n->ldata);
-         */
       }
       n->mdata = 0; //Clean up temp value storage.
       n->is2node = true;
       n->is3node = false;
       n->is4node = false;
    }
+}
+
+/*
+ * Removes the value "val" from the tree.
+ */
+void rmval(float val, tree * root) {
+   //Do I need to pass in the root itself, or can I live with the node *?
 }
 
 /*
@@ -320,7 +318,7 @@ static node * modmem(fetch_style f, node * node_to_clear) {
    static node ** buffers = NULL;
    static uint64_t buffers_len = 8192;
    static uint64_t buffers_ndx = 0;
-   //The buffer which stores pointers to nodes cleared by the delnode
+   //The buffer which stores pointers to nodes cleared by the rmval
    //function.
    static node ** delbuf = NULL;
    static uint64_t delbuf_len = 8192;
@@ -350,8 +348,10 @@ static node * modmem(fetch_style f, node * node_to_clear) {
          buf_size *= 2;
          mem_buf = malloc(sizeof(node) * buf_size);
          memset(mem_buf, '\0', sizeof(node) * buf_size);
+         //Prefix increment used here because the first element is always
+         //full.
          buffers[++buffers_ndx] = mem_buf;
-         if (buffers_ndx > buffers_len) {
+         if (buffers_ndx == buffers_len) {
             buffers_len *= 2;
             //Not going to bother using memset here, as the memory is
             //never read from before it's allocated.
@@ -362,15 +362,19 @@ static node * modmem(fetch_style f, node * node_to_clear) {
       }
       return mem_buf + temp;
    }
-   //A call to delnode was made, clear up the passed in address's data
+   //A call to rmval was made, clear up the passed in address's data
    //and add its address to the "free" buffer.
    else if (f == DEL) {
       if (node_to_clear == NULL) {
          fprintf(stderr, "Please pass in a valid address to clear.\n");
-         return NULL;
+         return NULL; //Perhaps ret a value other than NULL for an error...
       }
       delbuf[delbuf_ndx++] = node_to_clear;
       memset(node_to_clear, '\0', sizeof(node));
+      if (delbuf_ndx == delbuf_len) {
+         delbuf_len *= 2;
+         delbuf = realloc(delbuf, sizeof(node *) * delbuf_len);
+      }
       return NULL;
    }
    //Return everything to its initial state, free all buffers.
