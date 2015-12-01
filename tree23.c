@@ -7,7 +7,7 @@
  * "tree23.c", by Sean Soderman
  * Implementation of all necessary 2-3 tree functions, as well as
  * auxiliary "helper" functions to cut down on redundant code.
- * TODO: Need "delete" function, along with proper mem allocation for deletes.
+ * TODO: Need "delete" function.
  */
 
 /*
@@ -253,6 +253,7 @@ static void minsert(float val, node * n, direction dir) {
 
 /*
  * Removes the value "val" from the tree.
+ * TODO: Implement this!
  */
 void rmval(float val, tree * root) {
    //Do I need to pass in the root itself, or can I live with the node *?
@@ -295,17 +296,16 @@ static void swapsort(float val, node * n) {
  * Wraps a region of memory to write values to that is utilized by the
  * tree.
  * This might seem a little weird, but it's a simpler alternative
- * to emulating a class with a struct.
+ * to emulating a class with a struct. Almost every call to free
+ * and malloc is localized within this function.
+ *
  * f: a flag that tells grabmem whether it needs to free the tree's
- * memory or fetch more memory.
+ * memory, fetch more memory, or clear a node and add it to the deleted
+ * node buffer.
+ * node_to_clear: A memory address that specifies the node to clear
+ * and recycle.
  * Returns: a pointer to a node-sized region of memory, or NULL
  * if f is set to FREE.
- * TODO: Add buffer for cleared nodes from delete function that can
- * be reused on later "GET requests". Return mem addresses from this
- * buffer until it's empty, of course. And have it grow if it gets too big.
- * *MIGHT* want to group all the buffers up into a "tribuffer" or something
- * for organizational purposes. I'll have three different buffers with
- * three different offsets, otherwise.
  */
 static node * modmem(fetch_style f, node * node_to_clear) {
    static uint64_t buf_size = 8192; //Beginning size
