@@ -37,6 +37,8 @@ static void simpleswap(float val, node * n);
 static void swapsort(float val, node * n);
 //Function that encompasses (almost) all memory management the tree needs.
 static node * modmem(fetch_style f, node * node_to_clear);
+//Helper function for rmval that does all the heavy lifting.
+static node * mrmval(float val, node * item);
 
 /*
  * Handles the initialization of the tree.
@@ -253,10 +255,31 @@ static void minsert(float val, node * n, direction dir) {
 
 /*
  * Removes the value "val" from the tree.
- * TODO: Implement this!
  */
 void rmval(float val, tree * root) {
-   //Do I need to pass in the root itself, or can I live with the node *?
+   node * top_node = root->root;
+   //If this is just a root with no children..
+   if (top_node->left == NULL) {
+      if (top_node->ldata == val) {
+         top_node->ldata = 0;
+      }
+      else if (top_node->rdata == val) {
+         top_node->rdata = 0;
+      }
+      return;
+   }
+      
+   node * new_root = mrmval(val, top_node);
+   //If my root node has been cleared...
+   if (new_root != NULL) {
+     modmem(DEL, top_node);
+     root->root = new_root;
+   }
+}
+
+//Helper function for rmval that does all the heavy lifting.
+static node * mrmval(float val, node * item) {
+   
 }
 
 /*
