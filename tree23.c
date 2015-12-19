@@ -290,7 +290,7 @@ static node * mrmval(float val, node * top_node) {
    direction val_to_switch = middle;
    //1st loop: Dive to the bottom, setting up the swap between 
    //the node with "val" and a leaf node.
-   while (curr->lchild != NULL) {
+   while (curr->left != NULL) {
       if (curr->ldata == val || (curr->is3node && curr->rdata == val)) {
          node_to_swap = curr;
          val_to_switch = curr->ldata == val ? left : right;
@@ -346,11 +346,16 @@ static node * mrmval(float val, node * top_node) {
          return NULL;
    }
    //2nd loop: Pointer reorganisation, traverse upwards when necessary.
-   //Iterate only when my current node is empty and when I'm not at the root.
-   while(!curr->is2node && curr->parent != NULL){
+   //Iterate only when my current node is empty.
+   while(!curr->is2node) {
       //This is necessary for figuring which branches to move, etc.
       direction which_child = discern_childhood(curr, curr->parent);
       switch(which_child) {
+         //Convenience ptrs to reduce no. of following "->".
+         node * parent = curr->parent;
+         node * lchild = parent->left;
+         node * mchild = parent->middle;
+         node * rchild = parent->right;
          case no_parent:
             //TODO: These cases MIGHT not be necessary.
             if (curr->left != NULL)
@@ -362,11 +367,47 @@ static node * mrmval(float val, node * top_node) {
          case error:
             return NULL;
          case left:
-            //Is either sibling a 3-node? If so, move vals from parent
-            //and sibling over once and graft the sibling's left branch
-            //over to curr's
-            if (curr->parent->is3node) {
-               
+            if (parent->is3node) {
+               //Is either sibling a 3-node? If so, move vals from parent
+               //and sibling over and graft the sibling's left branch
+               //over to curr's right branch.
+               if (parent->middle->is3node) {
+                  curr->ldata = parent->ldata;
+                  parent->ldata = mchild->ldata;
+                  mchild->ldata = mchild->rdata;
+                  mchild->rdata = 0;
+                  mchild->is3node = false;
+                  mchild->is2node = true;
+                  curr->is2node = true;
+                  curr->right = mchild->left;
+                  curr->right->parent = curr;
+                  mchild->left = mchild->middle;
+                  mchild->middle = NULL;
+               }
+               else if (parent->right->is3node) {
+                  curr->ldata = parent->ldata;
+                  parent->ldata = mchild->ldata;
+                  mchild->ldata = parent->rdata;
+                  parent->rdata = rchild->ldata;
+                  rchild->ldata = rchild->rdata;
+                  rchild->rdata = 0;
+                  rchild->is3node = false;
+                  rchild->is2node = true;
+                  curr->is2node = true;
+                  curr->right = mchild->left;
+                  curr->right->parent = curr;
+                  mchild->left = mchild->right;
+                  mchild->right = rchild->left;
+                  mchild->right->parent = curr;
+                  rchild->left = rchild->middle;
+                  rchild->middle = NULL;
+               }
+               else { //Use the parent's "extra" value for help!
+                  //This is currently done "my" way. If it doesn't work
+                  //I'm reverting to the default (for all three cases).
+                  curr->ldata = parent->ldata;
+
+               }
             }
             break;
          case right:
