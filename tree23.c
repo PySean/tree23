@@ -7,17 +7,18 @@
  * "tree23.c", by Sean Soderman
  * Implementation of all necessary 2-3 tree functions, as well as
  * auxiliary "helper" functions to cut down on redundant code.
- * TODO: Need "delete" function.
  */
 
 /*
  * Allows children nodes to determine if they are a left, middle, or
- * right node.
+ * right node. Allows for easy error trapping as well.
  */
 typedef enum dir {
    left,
    middle,
-   right
+   right,
+   no_parent,
+   error
 }direction;
 
 /*
@@ -38,7 +39,9 @@ static void swapsort(float val, node * n);
 //Function that encompasses (almost) all memory management the tree needs.
 static node * modmem(fetch_style f, node * node_to_clear);
 //Helper function for rmval that does all the heavy lifting.
-static node * mrmval(float val, node * item);
+static node * mrmval(float val, node * top_node);
+//Discerns which child the node is.
+direction discern_childhood(node * child, node * parent);
 
 /*
  * Handles the initialization of the tree.
@@ -278,8 +281,117 @@ void rmval(float val, tree * root) {
 }
 
 //Helper function for rmval that does all the heavy lifting.
-static node * mrmval(float val, node * item) {
-   
+//TODO: might consider using a diff. ret value since it's just used in a test.
+static node * mrmval(float val, node * top_node) {
+   //Points to the node with a matching value.
+   node * node_to_swap = NULL;
+   node * curr = top_node;
+   //Avoids several ifs later when it comes to switching
+   direction val_to_switch = middle;
+   //1st loop: Dive to the bottom, setting up the swap between 
+   //the node with "val" and a leaf node.
+   while (curr->lchild != NULL) {
+      if (curr->ldata == val || (curr->is3node && curr->rdata == val)) {
+         node_to_swap = curr;
+         val_to_switch = curr->ldata == val ? left : right;
+         //Once I find the correct value, get to the biggest value of the
+         //left subtree.
+         curr = curr->left;
+      }
+      else if (node_to_swap == NULL) { 
+         if (val < curr->ldata)
+            curr = curr->left;
+         else if (curr->is3node && val < curr->rdata)
+            curr = curr->middle;
+         else
+            curr = curr->right;
+      }
+      else 
+        curr = curr->right;
+   }
+   //Switch the greatest value of l. subtree with selected value,
+   //if it was found, then demote the leaf node and clear the duplicate
+   //value.
+   switch(val_to_switch) {
+      case left:
+         //float temp = node_to_swap->ldata;
+         if (curr->is3node) {
+            node_to_swap->ldata = curr->rdata;
+            curr->rdata = 0;
+            curr->is2node = true;
+            curr->is3node = false;
+         }
+         else {
+            node_to_swap->ldata = curr->ldata;
+            curr->ldata = 0;
+            curr->is2node = false;
+         }
+         break;
+      case right:
+         //float temp = node_to_swap->rdata;
+         if (curr->is3node) {
+            node_to_swap->rdata = curr->rdata;
+            curr->rdata = 0;
+            curr->is2node = true;
+            curr->is3node = false;
+         }
+         else {
+            node_to_swap->rdata = curr->ldata;
+            curr->ldata = 0;
+            curr->is2node = false;
+         }
+         break;
+      //The value wasn't found!
+      case middle:
+         return NULL;
+   }
+   //2nd loop: Pointer reorganisation, traverse upwards when necessary.
+   //Iterate only when my current node is empty and when I'm not at the root.
+   while(!curr->is2node && curr->parent != NULL){
+      //This is necessary for figuring which branches to move, etc.
+      direction which_child = discern_childhood(curr, curr->parent);
+      switch(which_child) {
+         case no_parent:
+            //TODO: These cases MIGHT not be necessary.
+            if (curr->left != NULL)
+               return curr->left;
+            else if (curr->right != NULL)
+               return curr->right;
+            else
+               return curr->middle;
+         case error:
+            return NULL;
+         case left:
+            //Is either sibling a 3-node? If so, move vals from parent
+            //and sibling over once and graft the sibling's left branch
+            //over to curr's
+            if (curr->parent->is3node) {
+               
+            }
+            break;
+         case right:
+            break;
+         case middle:
+            break;
+      }
+   } 
+}
+
+//Discerns which child the node is.
+//Returns: The named branch of the parent the child node is attached to.
+direction discern_childhood(node * child, node * parent) {
+   if (parent == NULL)
+      return no_parent;
+   else if (child == parent->left)
+      return left;
+   else if (child == parent->right)
+      return right;
+   else if (child == parent->middle)
+      return middle;
+   else {
+      fprintf(stderr, "Error: Child has a different parent.\n");
+      return error;
+   }
 }
 
 /*
