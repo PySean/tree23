@@ -1,7 +1,7 @@
 #tree23
 
 ##Description
-A 2-3 tree implemented in C, using only [this](https://en.wikipedia.org/wiki/2%E2%80%933_tree) wikipedia page and its diagrams as a guide.
+A 2-3 tree implemented in C
 
 ##Dependencies
 * This program readily compiles with the latest version of gcc. I do not use 
@@ -17,3 +17,7 @@ iterations.
 I set out to implement this tree, but was baffled by several cases my specific
 design would have to consider. Thus, I was unable to complete the project before
 my first semester at UTSA, and now, two years later, I have given it a go again.
+
+##References
+[Wikipedia Entry](https://en.wikipedia.org/wiki/2%E2%80%933_tree)
+[USC PDF on 2-3 tree deletion] (http://www-bcf.usc.edu/~dkempe/CS104/11-19.pdf)
