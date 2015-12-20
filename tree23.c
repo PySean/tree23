@@ -147,9 +147,12 @@ void insert(float val, tree * root) {
 void treeprint(node * root) {
    if (root->left != NULL)
       treeprint(root->left);
-   printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
+   //printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
+   printf("ldata: %f\n", root->ldata);
    if (root->middle != NULL)
       treeprint(root->middle);
+   if (root->is3node)
+      printf("rdata: %f\n", root->rdata);
    if (root->right != NULL)
       treeprint(root->right);
 }

@@ -27,7 +27,7 @@ int main(int argc, char * argv[]) {
    insert(100, t);
    insert(21, t);
    insert(16, t);
-   rmval(16, t);
+   //rmval(16, t);
    treeprint(t->root);
    deltree(t);
    return 0;
