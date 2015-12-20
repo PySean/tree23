@@ -16,18 +16,17 @@ int main(int argc, char * argv[]) {
    insert(5, t);
    insert(21, t);
    */
-   /*
-   for (i; i < 100000; i++)
-      insert(i % 5, t);
-   node * root = t->root;
-   treeprint(root);
-   */
+   //for (i; i < 100000; i++)
+   //   insert(i , t);
+   //node * root = t->root;
+   //treeprint(root);
    insert(15, t);
    insert(61, t);
    insert(100, t);
    insert(21, t);
    insert(16, t);
-   //rmval(16, t);
+   ///************
+   rmval(21, t);
    treeprint(t->root);
    deltree(t);
    return 0;
