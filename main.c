@@ -16,25 +16,19 @@ int main(int argc, char * argv[]) {
    insert(5, t);
    insert(21, t);
    */
+   /*
    for (i; i < 100000; i++)
       insert(i % 5, t);
    node * root = t->root;
    treeprint(root);
-   /*
-   fprintf(stderr, "root val: %f left val: %f right val %f\n",
-           root->ldata, root->left->ldata, root->right->ldata);
-   char * z[2] = {"no", "yes"};
-   node * rchild = root->right;
-   node * rchildparent = rchild->right->parent;
-   node * lchild = root->left;
-   node * lchildparent = lchild->left->parent;
-   fprintf(stderr, "lchild parent == root? %s rchild parent == root? %s\n",
-           z[root->left->parent == root], z[root->right->parent == root]);
-   fprintf(stderr, "rchild == rchild parent? %s\n",
-           z[rchild == rchildparent]); 
-   fprintf(stderr, "lchild == lchild parent? %s\n",
-           z[lchild == lchildparent]);
    */
+   insert(15, t);
+   insert(61, t);
+   insert(100, t);
+   insert(21, t);
+   insert(16, t);
+   rmval(16, t);
+   treeprint(t->root);
    deltree(t);
    return 0;
 }

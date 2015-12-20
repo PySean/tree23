@@ -41,7 +41,7 @@ static node * modmem(fetch_style f, node * node_to_clear);
 //Helper function for rmval that does all the heavy lifting.
 static node * mrmval(float val, node * top_node);
 //Discerns which child the node is.
-direction discern_childhood(node * child, node * parent);
+static direction discern_childhood(node * child, node * parent);
 
 /*
  * Handles the initialization of the tree.
@@ -347,7 +347,8 @@ static node * mrmval(float val, node * top_node) {
    }
    //2nd loop: Pointer reorganisation, traverse upwards when necessary.
    //Iterate only when my current node is empty.
-   while(!curr->is2node) {
+   while(!curr->is2node && !curr->is3node) { //TODO: *May* have to conform to
+                                             //keeping the blank node a 2 node.
       //This is necessary for figuring which branches to move, etc.
       direction which_child = discern_childhood(curr, curr->parent);
       switch(which_child) {
@@ -371,7 +372,7 @@ static node * mrmval(float val, node * top_node) {
                //Is either sibling a 3-node? If so, move vals from parent
                //and sibling over and graft the sibling's left branch
                //over to curr's right branch.
-               if (parent->middle->is3node) {
+               if (mchild->is3node) {
                   curr->ldata = parent->ldata;
                   parent->ldata = mchild->ldata;
                   mchild->ldata = mchild->rdata;
@@ -384,7 +385,7 @@ static node * mrmval(float val, node * top_node) {
                   mchild->left = mchild->middle;
                   mchild->middle = NULL;
                }
-               else if (parent->right->is3node) {
+               else if (rchild->is3node) {
                   curr->ldata = parent->ldata;
                   parent->ldata = mchild->ldata;
                   mchild->ldata = parent->rdata;
@@ -406,13 +407,188 @@ static node * mrmval(float val, node * top_node) {
                   //This is currently done "my" way. If it doesn't work
                   //I'm reverting to the default (for all three cases).
                   curr->ldata = parent->ldata;
-
+                  curr->rdata = mchild->ldata;
+                  parent->ldata = parent->rdata;
+                  parent->rdata = 0;
+                  //mchild->ldata = 0; uneccessary b/c of modmem!
+                  curr->middle = mchild->left;
+                  curr->right = mchild->right;
+                  curr->middle->parent = curr;
+                  curr->right->parent = curr;
+                  curr->is3node = true;
+                  parent->is3node = false;
+                  parent->is2node = true;
+                  modmem(DEL, mchild); //Check on this for debugging
+                                       //if it segfaults.
+                  parent->middle = NULL;
+               }
+            } //End left child 3node case
+            else { //Parent is a 2-node.
+               if (rchild->is3node) {
+                  curr->ldata = parent->ldata;
+                  parent->ldata = rchild->ldata;
+                  rchild->ldata = rchild->rdata;
+                  rchild->rdata = 0;
+                  rchild->is3node = false;
+                  rchild->is2node = true;
+                  curr->is2node = true;
+                  curr->right = rchild->left;
+                  rchild->left = rchild->middle;
+                  rchild->middle = NULL;
+                  curr->right->parent = curr;
+               }
+               else { //Parent and sibling are 2-nodes.
+                  //Merge parent into nonempty sibling node.
+                  rchild->rdata = rchild->ldata;
+                  rchild->ldata = parent->ldata;
+                  parent->ldata = 0;
+                  rchild->middle = rchild->left;
+                  rchild->left = curr->middle;
+                  rchild->left->parent = rchild;
+                  modmem(DEL, curr);
+                  curr = parent;
+                  curr->is2node = false;
+                  //Assign the merged child to the ptr 
+                  //that can be safely left "alone"
+                  //on subsequent iterations.
+                  direction d = discern_childhood(curr, curr->parent);
+                  if (d == left)
+                     curr->left = rchild;
+                  else if (d == right)
+                     curr->right = rchild;
+                  else if (d == middle) //TODO: Not certain about this one yet
+                     curr->middle = rchild;
+                  else if (d == no_parent)
+                     return curr;
                }
             }
             break;
          case right:
+            if (parent->is3node) {
+               if (mchild->is3node) {
+                  curr->ldata = parent->rdata;
+                  parent->rdata = mchild->rdata;
+                  mchild->rdata = 0;
+                  mchild->is3node = false;
+                  mchild->is2node = true;
+                  curr->is2node = true;
+                  curr->left = mchild->right;
+                  curr->left->parent = curr;
+                  mchild->right = mchild->middle;
+                  mchild->middle = NULL;
+               }
+               else if (lchild->is3node) {
+                 curr->ldata = parent->rdata;
+                 parent->rdata = mchild->ldata;
+                 mchild->ldata = parent->ldata;
+                 parent->ldata = lchild->rdata;
+                 lchild->rdata = 0;
+                 lchild->is3node = false;
+                 curr->is2node = true;
+                 curr->left = mchild->right;
+                 curr->left->parent = curr;
+                 mchild->right = mchild->left;
+                 mchild->left = lchild->right;
+                 mchild->left->parent = mchild;
+                 lchild->right = lchild->middle;
+                 lchild->middle = NULL;
+               }
+               else { //Make 2 node by bringing parent's rval down & merging
+                      //the middle node in.
+                  curr->rdata = parent->rdata;
+                  curr->ldata = mchild->ldata;
+                  parent->rdata = 0;
+                  parent->is3node = false;
+                  parent->is2node = true;
+                  curr->is3node = true;
+                  curr->middle = mchild->right;
+                  curr->middle->parent = curr;
+                  curr->left = mchild->left;
+                  curr->left->parent = curr;
+                  modmem(DEL, mchild);
+                  parent->middle = NULL;
+               }
+            }
+            else { //Parent is 2node.
+               if (lchild->is3node) {
+                  curr->ldata = parent->ldata;
+                  parent->ldata = lchild->rdata;
+                  lchild->rdata = 0;
+                  curr->is2node = true;
+                  lchild->is3node = false;
+                  lchild->is2node = true;
+                  curr->left = lchild->right;
+                  curr->left->parent = curr;
+                  lchild->right = lchild->middle;
+                  lchild->middle = NULL;
+               }
+               else { //Merge parent into sibling node, promote curr.
+                  lchild->rdata = parent->ldata;
+                  parent->ldata = 0;
+                  lchild->right = curr->right;
+                  lchild->right->parent = lchild;
+                  modmem(DEL, curr);
+                  curr = parent;
+                  direction d = discern_childhood(curr, curr->parent);
+                  if (d == left)
+                     curr->left = rchild;
+                  else if (d == right)
+                     curr->right = rchild;
+                  else if (d == middle) //TODO: Not certain about this one yet
+                     curr->middle = rchild;
+                  else if (d == no_parent)
+                     return curr;
+               }
+            }
             break;
          case middle:
+            //Since this is the middle case, it's one hop either way,
+            //*and* my parent is a guaranteed 3-node.
+            if (lchild->is3node) {
+               curr->ldata = parent->ldata;
+               parent->ldata = lchild->rdata;
+               lchild->rdata = 0;
+               lchild->is3node = false;
+               lchild->is2node = true;
+               curr->is2node = true;
+               curr->right = curr->middle;
+               curr->middle = NULL;
+               curr->left = lchild->right;
+               curr->left->parent = curr;
+               lchild->right = lchild->middle;
+               lchild->middle = NULL;
+            }
+            else if (rchild->is3node) {
+               curr->ldata = parent->rdata;
+               parent->rdata = rchild->ldata;
+               rchild->ldata = rchild->rdata;
+               rchild->rdata = 0;
+               rchild->is3node = false;
+               rchild->is2node = true;
+               curr->is2node = true;
+               curr->left = curr->middle;
+               curr->middle = NULL;
+               curr->right = rchild->left;
+               curr->right->parent = curr;
+               rchild->left = rchild->middle;
+               rchild->middle = NULL;
+            }
+            //Use either sibling with parent to make new 3-node.
+            //Here I'll just use the left child.
+            else { 
+               lchild->rdata = parent->ldata;
+               parent->ldata = parent->rdata;
+               parent->rdata = 0;
+               parent->is3node = false;
+               parent->is2node = true;
+               lchild->is2node = false;
+               lchild->is3node = true;
+               lchild->right = curr->middle;
+               lchild->right->parent = lchild;
+               modmem(DEL, curr);
+               curr = lchild;
+               parent->middle = NULL;
+            }
             break;
       }
    } 
@@ -420,7 +596,7 @@ static node * mrmval(float val, node * top_node) {
 
 //Discerns which child the node is.
 //Returns: The named branch of the parent the child node is attached to.
-direction discern_childhood(node * child, node * parent) {
+static direction discern_childhood(node * child, node * parent) {
    if (parent == NULL)
       return no_parent;
    else if (child == parent->left)
