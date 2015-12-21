@@ -7,6 +7,9 @@ A 2-3 tree implemented in C.
 * This program readily compiles with the latest version of gcc. I do not use 
 any non-standard features or extensions, so any version of gcc should suffice.
 
+##Usage (for now)
+   make && ./mktree
+
 ##History
 In the year 2013, after completing my Data Structures course, I figured that
 I ought to implement some of the more complex items we went over in class but
