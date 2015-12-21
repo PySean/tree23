@@ -19,13 +19,11 @@ int main(int argc, char * argv[]) {
    for (i; i < 2005;  i++) {
       insert(i , t);
    }
-   //The integrity of these first values is verified.
-   //node * root = t->root;
    insert(15, t);
    insert(61, t);
    insert(100, t);
    insert(21, t);
-   insert(16, t); //Incorrect assignment to parent happens here, for midchild.
+   insert(16, t);
    insert(56, t); 
    insert(64, t);
    rmval(46, t);

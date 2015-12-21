@@ -408,8 +408,7 @@ static node * mrmval(float val, node * top_node) {
    }
    //2nd loop: Pointer reorganisation, traverse upwards when necessary.
    //Iterate only when my current node is empty.
-   while(!curr->is2node && !curr->is3node) { //TODO: *May* have to conform to
-                                             //keeping the blank node a 2 node.
+   while(!curr->is2node && !curr->is3node) { 
       //Convenience ptrs to reduce no. of following "->".
       node * parent = curr->parent;
       node * lchild = parent->left;
@@ -419,7 +418,6 @@ static node * mrmval(float val, node * top_node) {
       direction which_child = discern_childhood(curr, curr->parent);
       switch(which_child) {
          case no_parent:
-            //TODO: These cases MIGHT not be necessary.
             if (curr->left != NULL)
                return curr->left;
             else if (curr->right != NULL)
@@ -533,7 +531,7 @@ static node * mrmval(float val, node * top_node) {
                      curr->left = rchild;
                   else if (d == right)
                      curr->right = rchild;
-                  else if (d == middle) //TODO: Not certain about this one yet
+                  else if (d == middle) 
                      curr->middle = rchild;
                   else if (d == no_parent) {
                      fprintf(stderr, "I have no parent.\n");
@@ -626,7 +624,7 @@ static node * mrmval(float val, node * top_node) {
                      curr->left = lchild;
                   else if (d == right)
                      curr->right = lchild;
-                  else if (d == middle) //TODO: Not certain about this one yet
+                  else if (d == middle)
                      curr->middle = lchild;
                   else if (d == no_parent)
                      return lchild;
