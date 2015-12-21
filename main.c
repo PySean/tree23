@@ -12,15 +12,12 @@ void nodecheck(node * n);
 int main(int argc, char * argv[]) {
    tree * t = create();
    int i = 1998;
-   /*
    insert(20, t);
    insert(500, t);
    insert(5, t);
-   insert(21, t);
-   */
-   for (i; i < 2005; i++) {
+   insert(12, t);
+   for (i; i < 2005;  i++) {
       insert(i , t);
-      //nodecheck(t->root);
    }
    //The integrity of these first values is verified.
    //node * root = t->root;
@@ -29,31 +26,13 @@ int main(int argc, char * argv[]) {
    insert(100, t);
    insert(21, t);
    insert(16, t); //Incorrect assignment to parent happens here, for midchild.
-   //FIXME: The tree order is off with 14 values (of this sort.) 
-   //I need to trace it (TODO: Check integrity of tree before 
-   //the problematic insertion, then trace through how that insertion would
-   //affect the tree.)
-   //Extra inserts to aggravate segfault (actually, the tree order is off)
    insert(56, t); 
-   //treeprint(t->root);
-   insert(64, t); //This is the straw that breaks the camel's back.
-
-   //insert(99, t);
-   //insert(1, t);
+   insert(64, t);
+   rmval(46, t);
+   rmval(100, t);
+   rmval(15, t);
+   rmval(16, t);
    treeprint(t->root);
-   
-   //fprintf(stderr, "blip\n");
-   //nodecheck(t->root);
-   ///************
-   //rmval(46, t);
-   //treeprint(t->root);
-   //rmval(100, t);
-   //treeprint(t->root);
-   //rmval(15, t);
-   //treeprint(t->root);
-   //rmval(16, t);
-   //nodecheck(t->root);
-   //treeprint(t->root);
    deltree(t);
    return 0;
 }

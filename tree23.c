@@ -149,18 +149,20 @@ void treeprint(node * root) {
       treeprint(root->left);
    //printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
    printf("ldata: %f\n", root->ldata);
+   /* Uncomment for debugging
    if (root->parent != NULL) {
       printf("Parent ldata: %f mdata: %f rdata: %f\n",
              root->parent->ldata, root->parent->mdata, root->parent->rdata);
-   }
+   }*/
    if (root->middle != NULL)
       treeprint(root->middle);
    if (root->is3node) {
       printf("rdata: %f\n", root->rdata);
+      /* Uncomment for debugging
       if (root->parent != NULL) {
          printf("Parent ldata: %f mdata: %f rdata: %f\n",
                 root->parent->ldata, root->parent->mdata, root->parent->rdata);
-      }
+      }*/
    }
    if (root->right != NULL)
       treeprint(root->right);
@@ -367,9 +369,6 @@ static node * mrmval(float val, node * top_node) {
         curr = curr->right;
    } 
    curr = prev;
-   fprintf(stderr, "node_to_swap: %p\n", node_to_swap);
-   //fprintf(stderr, "curr: %f, node_to_swap: %f, curr parent: %f\n",
-   //        curr->ldata, node_to_swap->ldata, curr->parent->ldata);
    //Switch the greatest value of l. subtree with selected value,
    //if it was found, then demote the leaf node and clear the duplicate
    //value.
@@ -407,9 +406,6 @@ static node * mrmval(float val, node * top_node) {
       case middle:
          return NULL;
    }
-   fprintf(stderr, "curr: %f, node_to_swap: %f, curr parent: %f\n",
-           curr->ldata, node_to_swap->ldata, curr->parent->ldata);
-   char * checker[5] = {"left", "middle", "right", "no_parent", "error"};
    //2nd loop: Pointer reorganisation, traverse upwards when necessary.
    //Iterate only when my current node is empty.
    while(!curr->is2node && !curr->is3node) { //TODO: *May* have to conform to
@@ -600,7 +596,6 @@ static node * mrmval(float val, node * top_node) {
             }
             else { //Parent is 2node.
                if (lchild->is3node) {
-                  //fprintf(stderr, "Removing 100\n");
                   curr->ldata = parent->ldata;
                   parent->ldata = lchild->rdata;
                   lchild->rdata = 0;
@@ -675,7 +670,6 @@ static node * mrmval(float val, node * top_node) {
             //Use either sibling with parent to make new 3-node.
             //Here I'll just use the left child.
             else { 
-               //fprintf(stderr, "Removing 21.\n");
                lchild->rdata = parent->ldata;
                parent->ldata = parent->rdata;
                parent->rdata = 0;
