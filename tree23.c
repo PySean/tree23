@@ -148,7 +148,9 @@ void treeprint(node * root) {
    if (root->left != NULL)
       treeprint(root->left);
    //printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
-   printf("ldata: %f\n", root->ldata);
+   //printf("ldata: %f\n", root->ldata); FIXME: Rm this comment after debug.
+   if (discern_childhood(root, root->parent) == error) //DEBUG
+      fprintf(stderr, "There is an error!\n");
    /* Uncomment for debugging
    if (root->parent != NULL) {
       printf("Parent ldata: %f mdata: %f rdata: %f\n",
@@ -157,7 +159,9 @@ void treeprint(node * root) {
    if (root->middle != NULL)
       treeprint(root->middle);
    if (root->is3node) {
-      printf("rdata: %f\n", root->rdata);
+      //printf("rdata: %f\n", root->rdata); FIXME: Rm this comment after debug.
+   if (discern_childhood(root, root->parent) == error) //DEBUG
+      fprintf(stderr, "There is an error!\n");
       /* Uncomment for debugging
       if (root->parent != NULL) {
          printf("Parent ldata: %f mdata: %f rdata: %f\n",
@@ -329,6 +333,8 @@ void rmval(float val, tree * root) {
    node * new_root = mrmval(val, top_node);
    //If my root node has been cleared...
    if (new_root != NULL) {
+     //DEBUG TODO: Ok, so root removal doesn't cause the issue.
+     fprintf(stderr, "Root removal case entered.\n");
      //modmem(DEL, top_node);
      root->root = new_root; //new_root->middle;
      modmem(DEL, new_root->parent);
@@ -367,7 +373,7 @@ static node * mrmval(float val, node * top_node) {
       }
       else 
         curr = curr->right;
-   } 
+   }
    curr = prev;
    //Switch the greatest value of l. subtree with selected value,
    //if it was found, then demote the leaf node and clear the duplicate
@@ -402,13 +408,14 @@ static node * mrmval(float val, node * top_node) {
             curr->is2node = false;
          }
          break;
-      //The value wasn't found!
+      //The value wasn't found! Should NOT happen during diagnostics.
       case middle:
+         fprintf(stderr, "Value not found!\n");
          return NULL;
    }
    //2nd loop: Pointer reorganisation, traverse upwards when necessary.
    //Iterate only when my current node is empty.
-   while(!curr->is2node && !curr->is3node) { 
+   while(!curr->is2node && !curr->is3node) {
       //Convenience ptrs to reduce no. of following "->".
       node * parent = curr->parent;
       node * lchild = parent->left;
@@ -477,9 +484,6 @@ static node * mrmval(float val, node * top_node) {
                   curr->middle = mchild->left;
                   curr->right = mchild->right;
                   //fprintf(stderr, "Correct case reached.\n");
-                  //The below line causes the seg fault in this instance.
-                  //Well of course it does, this is a leaf node. Need to check
-                  //for null (propagate fix to all other trip. derefs.)
                   if (curr->middle != NULL && curr->right != NULL) {
                      curr->middle->parent = curr;
                      curr->right->parent = curr;
@@ -667,7 +671,7 @@ static node * mrmval(float val, node * top_node) {
             }
             //Use either sibling with parent to make new 3-node.
             //Here I'll just use the left child.
-            else { 
+            else {
                lchild->rdata = parent->ldata;
                parent->ldata = parent->rdata;
                parent->rdata = 0;
