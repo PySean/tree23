@@ -83,8 +83,12 @@ void standard_test() {
    //fill an array with random numbers first, then insert and delete
    //them all within two one-line for-loops.
    float * test_array = malloc(sizeof(float) * testbuflen);
-   for (i; i < testbuflen; i++)
-      test_array[i] = (float)rand();
+   //FILE * fdump = fopen("debug.txt", "w+"); //Test output file...
+   for (i; i < testbuflen; i++) {
+      test_array[i] = (float)(rand());
+      //fprintf(fdump, "%f\n", test_array[i]);
+   }
+   //fclose(fdump);
    clock_t start_time = clock();
 
    for (i = 0; i < testbuflen; i++)
@@ -92,11 +96,11 @@ void standard_test() {
    for (i = 0; i < testbuflen; i++) {
       fprintf(stderr, "Removing %f\n", test_array[i]);
       rmval(test_array[i], t); //TODO: Problem in rmval...*sigh*
+      treeprint(t->root);
    }
    clock_t end_time = clock();
    //FIXME: Probably want the time in ms.
    //printf("Runtime in seconds: %li\n", (end_time - start_time) / CLOCKS_PER_SEC);
-   treeprint(t->root);
    deltree(t);
 }
 //Runs a customised test specified by the user.
