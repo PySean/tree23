@@ -148,7 +148,7 @@ void treeprint(node * root) {
    if (root->left != NULL)
       treeprint(root->left);
    //printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
-   //printf("ldata: %f\n", root->ldata); //FIXME: Rm this comment after debug.
+   //printf("ldata: %f\n", root->ldata); 
    if (discern_childhood(root, root->parent) == error) //DEBUG
       fprintf(stderr, "There is an error!\n");
    /* Uncomment for debugging
@@ -159,7 +159,7 @@ void treeprint(node * root) {
    if (root->middle != NULL)
       treeprint(root->middle);
    if (root->is3node) {
-   ///   printf("rdata: %f\n", root->rdata); //FIXME: Rm this comment after debug.
+   ///   printf("rdata: %f\n", root->rdata);
    if (discern_childhood(root, root->parent) == error) //DEBUG
       fprintf(stderr, "There is an error!\n");
       /* Uncomment for debugging
@@ -475,7 +475,7 @@ static node * mrmval(float val, node * top_node) {
                   mchild->left = mchild->right;
                   mchild->right = rchild->left;
                   if (mchild->right != NULL)
-                     mchild->right->parent = curr;
+                     mchild->right->parent = mchild;
                   rchild->left = rchild->middle;
                   rchild->middle = NULL;
                }
@@ -544,12 +544,21 @@ static node * mrmval(float val, node * top_node) {
                   //that can be safely left "alone"
                   //on subsequent iterations.
                   direction d = discern_childhood(curr, curr->parent);
-                  if (d == left)
-                     curr->left = rchild;
-                  else if (d == right)
-                     curr->right = rchild;
-                  else if (d == middle) 
-                     curr->middle = rchild;
+                  if (d == left) {
+                     curr->left = curr->right;
+                     curr->right = NULL;
+                     //if (curr->left && curr->right)
+                     //   fprintf(stderr, "Uh oh!\n");
+                  }
+                 /* else if (d == right) {
+                     curr->right = rchild; //Nothing needs to be done here.
+                  }*/
+                  else if (d == middle) {
+                     curr->middle = curr->right;
+                     curr->right = NULL;
+                     //if (curr->left && curr->right)
+                     //   fprintf(stderr, "Uh oh!\n");
+                  }
                   else if (d == no_parent) {
                      fprintf(stderr, "I have no parent.\n");
                      //curr->middle = rchild;
@@ -651,17 +660,22 @@ static node * mrmval(float val, node * top_node) {
                   fprintf(stderr, "lchild->parent == curr: %s\n", 
                           curr == lchild->parent ? "true" : "false");
                   direction d = discern_childhood(curr, curr->parent);
-                  //TODO: Maybe this bit (no parent reass.) causes it.
-                  //However, curr is the parent, so it shouldn't matter.
-                  //Sometimes it does. I'm going to just reassign it
-                  //and see what happens.
-                  //TODO: Check this next!!
-                  if (d == left)
-                     curr->left = lchild;
-                  else if (d == right)
-                     curr->right = lchild;
-                  else if (d == middle)
-                     curr->middle = lchild;
+                  //TODO: I believe I duplicate a tree branch here!
+                  //if (d == left) {
+                  //   curr->left = lchild;
+                  //}
+                  /*else*/ if (d == right) {
+                     curr->right = curr->left;
+                     curr->left = NULL;
+                     //if (curr->left && curr->right)
+                     //   fprintf(stderr, "Uh oh!\n");
+                  }
+                  else if (d == middle) {
+                     curr->middle = curr->left;
+                     curr->left = NULL;
+                     //if (curr->left && curr->middle)
+                     //   fprintf(stderr, "Uh oh!\n");
+                  }
                   else if (d == no_parent) {
                      fprintf(stderr, "I have no parent\n");
                      return lchild;
