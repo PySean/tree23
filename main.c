@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include "tree23.h"
+
 /*
  * "main.c", by Sean Soderman
  * Simply tests the 2-3 tree functions I've implemented.
@@ -18,6 +19,7 @@ void nodecheck(node * n);
 void standard_test();
 //Runs a customised test specified by the user.
 void custom_test(uint64_t num_to_insert, char * filename);
+
 int main(int argc, char * argv[]) {
    if (argc < 2) {
       fprintf(stderr, "No options specified. Will run standard test.\n");
@@ -69,7 +71,7 @@ void nodecheck(node * n) {
 }
 //Runs a standard test of the program using 100,000 insertions/deletions
 void standard_test() {
-   int testbuflen = 100;
+   int testbuflen = 100000;
    int i = 0;
    time_t seed = time(NULL);
    if (errno == EOVERFLOW) {
@@ -96,9 +98,9 @@ void standard_test() {
    for (i = 0; i < testbuflen; i++) {
       fprintf(stderr, "Removing %f\n", test_array[i]);
       rmval(test_array[i], t); //TODO: Problem in rmval...*sigh*
-      treeprint(t->root);
    }
    clock_t end_time = clock();
+   treeprint(t->root);
    //FIXME: Probably want the time in ms.
    //printf("Runtime in seconds: %li\n", (end_time - start_time) / CLOCKS_PER_SEC);
    deltree(t);

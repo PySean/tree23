@@ -42,6 +42,9 @@ static node * modmem(fetch_style f, node * node_to_clear);
 static node * mrmval(float val, node * top_node);
 //Discerns which child the node is.
 static direction discern_childhood(node * child, node * parent);
+//Validates the 2-3 tree by checking if the ordering of its values are
+//correct. Returns true if the tree passes the test, false otherwise.
+bool isvalid(node * curr);
 
 /*
  * Handles the initialization of the tree.
@@ -147,8 +150,8 @@ void insert(float val, tree * root) {
 void treeprint(node * root) {
    if (root->left != NULL)
       treeprint(root->left);
-   //printf("ldata: %f rdata: %f\n", root->ldata, root->rdata);
-   //printf("ldata: %f\n", root->ldata); 
+   //fprintf(stderr, "ldata: %f rdata: %f\n", root->ldata, root->rdata);
+   fprintf(stderr, "ldata: %f\n", root->ldata); 
    if (discern_childhood(root, root->parent) == error) //DEBUG
       fprintf(stderr, "There is an error!\n");
    /* Uncomment for debugging
@@ -159,9 +162,9 @@ void treeprint(node * root) {
    if (root->middle != NULL)
       treeprint(root->middle);
    if (root->is3node) {
-   ///   printf("rdata: %f\n", root->rdata);
-   if (discern_childhood(root, root->parent) == error) //DEBUG
-      fprintf(stderr, "There is an error!\n");
+      fprintf(stderr, "rdata: %f\n", root->rdata);
+      if (discern_childhood(root, root->parent) == error) //DEBUG
+         fprintf(stderr, "There is an error!\n");
       /* Uncomment for debugging
       if (root->parent != NULL) {
          printf("Parent ldata: %f mdata: %f rdata: %f\n",
@@ -353,14 +356,18 @@ static node * mrmval(float val, node * top_node) {
    direction val_to_switch = middle;
    //1st loop: Dive to the bottom, setting up the swap between 
    //the node with "val" and a leaf node.
-   while (curr != NULL) { //(curr->left != NULL) {
+   while (curr != NULL) { //(curr->left != NULL) 
       prev = curr;
-      if (curr->ldata == val || (curr->is3node && curr->rdata == val)) {
+      if (curr->ldata == val || (curr->is3node && (curr->rdata == val))) {
          node_to_swap = curr;
          val_to_switch = curr->ldata == val ? left : right;
          //Once I find the correct value, get to the biggest value of the
-         //left subtree.
-         curr = curr->left;
+         //left subtree, or the smallest value of the right subtree.
+         //curr = curr->left; //FIXME: Temp repl. by new code for test.
+         if (val_to_switch == left)
+            curr = curr->left;
+         else if (val_to_switch == right)
+            curr = curr->right;
       }
       else if (node_to_swap == NULL) { 
          if (val < curr->ldata)
@@ -371,8 +378,13 @@ static node * mrmval(float val, node * top_node) {
          else
             curr = curr->right;
       }
-      else 
-        curr = curr->right;
+      else {
+        //curr = curr->right //FIXME: Temp repl by new code for test.
+        if (val_to_switch == left)
+           curr = curr->right;
+        else if (val_to_switch == right)
+           curr = curr->left;
+      }
    }
    curr = prev;
    //Switch the greatest value of l. subtree with selected value,
@@ -390,21 +402,23 @@ static node * mrmval(float val, node * top_node) {
             curr->is3node = false;
          }
          else {
+            fprintf(stderr, "In 2node leaf case for left swap.\n");
             node_to_swap->ldata = curr->ldata;
             curr->ldata = 0;
             curr->is2node = false;
          }
          break;
       case right:
-         //float temp = node_to_swap->rdata;
          if (curr->is3node) {
             fprintf(stderr, "In 3node leaf case for right swap.\n");
-            node_to_swap->rdata = curr->rdata;
+            node_to_swap->rdata = curr->ldata;
+            curr->ldata = curr->rdata;
             curr->rdata = 0;
             curr->is2node = true;
             curr->is3node = false;
          }
          else {
+            fprintf(stderr, "In 2node leaf case for right swap.\n");
             node_to_swap->rdata = curr->ldata;
             curr->ldata = 0;
             curr->is2node = false;
@@ -500,8 +514,8 @@ static node * mrmval(float val, node * top_node) {
                   parent->is2node = true;
                   modmem(DEL, mchild);
                   parent->middle = NULL;
-               }
-            } //End left child 3node case
+               } //End left child 3node case
+            } //End 3-node parent case
             else { //Parent is a 2-node.
                if (rchild->is3node) {
                   fprintf(stderr, 
@@ -536,8 +550,6 @@ static node * mrmval(float val, node * top_node) {
                      rchild->left->parent = rchild;
                   modmem(DEL, curr);
                   curr = parent;
-                  fprintf(stderr, "rchild->parent == curr: %s\n", 
-                          curr == rchild->parent ? "true" : "false");
                   curr->is2node = false;
                   curr->left = NULL;
                   //Assign the merged child to the ptr 
@@ -657,8 +669,6 @@ static node * mrmval(float val, node * top_node) {
                   modmem(DEL, curr);
                   curr = parent;
                   curr->right = NULL;
-                  fprintf(stderr, "lchild->parent == curr: %s\n", 
-                          curr == lchild->parent ? "true" : "false");
                   direction d = discern_childhood(curr, curr->parent);
                   //TODO: I believe I duplicate a tree branch here!
                   //if (d == left) {
@@ -749,7 +759,7 @@ static node * mrmval(float val, node * top_node) {
 
 //Discerns which child the node is.
 //Returns: The named branch of the parent the child node is attached to.
-static direction discern_childhood(node * child, node * parent) {
+direction discern_childhood(node * child, node * parent) {
    if (parent == NULL)
       return no_parent;
    else if (child == parent->left)
@@ -904,4 +914,64 @@ static node * modmem(fetch_style f, node * node_to_clear) {
       delbuf_ndx = 0;
       return NULL;
    }
+}
+bool isvalid(node * curr) {
+   bool valid = true; //I'm feeling optimistic.
+   node * parent = curr->parent;
+   if (curr->left != NULL)
+      valid = isvalid(curr->left);
+   if (!valid)
+      return valid;
+   if (curr->ldata > curr->rdata && curr->is3node) {
+      fprintf(stderr, "curr ldata: %f, rdata: %f\n", curr->ldata, curr->rdata);
+      fprintf(stderr, "Should never happen\n");
+      return false;
+   }
+   switch(discern_childhood(curr, parent)) {
+      case no_parent:
+         break;
+      case left:
+         if (curr->ldata > parent->ldata)
+            return false;
+         if (curr->is3node && curr->rdata > parent->ldata)
+            return false;
+         if (parent->is3node) {
+            if (curr->ldata > parent->rdata)
+               return false;
+            else if (curr->is3node && curr->rdata > parent->rdata)
+               return false;
+         }
+         break;
+      case middle:
+         if (curr->ldata < parent->ldata)
+            return false;
+         if (curr->ldata > parent->rdata)
+            return false;
+         if (curr->is3node) {
+            if (curr->rdata < parent->ldata)
+               return false;
+            if (curr->rdata > parent->rdata)
+               return false;
+         }
+         break;
+      case right:
+         if (curr->ldata < parent->ldata)
+            return false;
+         if (curr->is3node && curr->rdata < parent->ldata)
+            return false;
+         if (parent->is3node) {
+            if (curr->ldata < parent->rdata)
+               return false;
+            else if (curr->is3node && curr->rdata < parent->rdata)
+               return false;
+         }
+         break;
+   }
+   if (curr->middle != NULL)
+      valid = isvalid(curr->middle);
+   if (!valid) //I think I need to check this a little more carefully.
+      return valid;
+   if (curr->right != NULL)
+      valid = isvalid(curr->right);
+   return valid;
 }
