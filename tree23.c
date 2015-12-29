@@ -81,7 +81,6 @@ void insert(float val, tree * root) {
    }
    //The root is a temp-4 node w/children, grow a new root and right node.
    if (n->is4node && n->mid_right) {
-      //fprintf(stderr, "Temp 4 node split growth\n");
       //Create new root, have old root's parent ptr point to it.
       //Make sure to clear out the middle data as well.
       node * new_root = modmem(GET, NULL);
@@ -114,7 +113,6 @@ void insert(float val, tree * root) {
    }
    //Initial case of inserting data: a full root node with no children.
    else if (n->is3node && n->left == NULL) {
-      //fprintf(stderr, "Initial split growth\n");
       node * new_root = modmem(GET, NULL);
       new_root->left = n;
       swapsort(val, n);
@@ -133,12 +131,10 @@ void insert(float val, tree * root) {
       root->root = new_root;
    }
    else if (n->is2node != true && n->left == NULL) {
-      //fprintf(stderr, "Filling up empty root.\n");
       n->ldata = val;
       n->is2node = true;
    }
    else if (n->is2node && n->left == NULL) {
-      //fprintf(stderr, "Root has empty spot, swapping value in.\n");
       simpleswap(val, n);
    }
 
@@ -150,26 +146,11 @@ void insert(float val, tree * root) {
 void treeprint(node * root) {
    if (root->left != NULL)
       treeprint(root->left);
-   //fprintf(stderr, "ldata: %f rdata: %f\n", root->ldata, root->rdata);
-   fprintf(stderr, "ldata: %f\n", root->ldata); 
-   if (discern_childhood(root, root->parent) == error) //DEBUG
-      fprintf(stderr, "There is an error!\n");
-   /* Uncomment for debugging
-   if (root->parent != NULL) {
-      printf("Parent ldata: %f mdata: %f rdata: %f\n",
-             root->parent->ldata, root->parent->mdata, root->parent->rdata);
-   }*/
+   printf("ldata: %f\n", root->ldata); 
    if (root->middle != NULL)
       treeprint(root->middle);
    if (root->is3node) {
-      fprintf(stderr, "rdata: %f\n", root->rdata);
-      if (discern_childhood(root, root->parent) == error) //DEBUG
-         fprintf(stderr, "There is an error!\n");
-      /* Uncomment for debugging
-      if (root->parent != NULL) {
-         printf("Parent ldata: %f mdata: %f rdata: %f\n",
-                root->parent->ldata, root->parent->mdata, root->parent->rdata);
-      }*/
+      printf("rdata: %f\n", root->rdata);
    }
    if (root->right != NULL)
       treeprint(root->right);
@@ -196,31 +177,18 @@ static void minsert(float val, node * n, direction dir) {
    else { //I am a leaf 3-node and I'm ready to overflow!
       swapsort(val, n);
       n->is4node = true;
-      //fprintf(stderr, "ldata: %f mdata: %f rdata: %f\n", 
-      //n->ldata, n->mdata, n->rdata);
-      /*
-      if (n->ldata == 64) {
-         fprintf(stderr, "parent ldata: %f rdata: %f\n", 
-         n->parent->ldata, n->parent->rdata);
-      }
-      */
    }
    //The node has overflowed! Split accordingly.
    if (n->is4node) {
       node * parent = n->parent;
       float promoted_val = n->mdata;
       if (parent->is2node) { //Parent is a 2-node
-         //fprintf(stderr,"Inside overflow case for 2-nodes\n");
          simpleswap(promoted_val, parent);
          node * new_node = modmem(GET, NULL);
          new_node->parent = parent;
          parent->middle = new_node;
          switch(dir) {
             case left:
-               if (promoted_val == 61) {
-                  fprintf(stderr, "Present.\n");
-                  //treeprint(parent);
-               }
                new_node->ldata = n->rdata;
                //Transfer pointers unconditionally, since it wouldn't hurt
                //either way
@@ -251,7 +219,6 @@ static void minsert(float val, node * n, direction dir) {
          new_node->is2node = true;
       }
       else { //Parent is a 3-node.
-         //fprintf(stderr,"Inside overflow case for 3-nodes\n");
          swapsort(promoted_val, parent);
          parent->is4node = true;
          node * new_node = modmem(GET, NULL);
@@ -269,10 +236,6 @@ static void minsert(float val, node * n, direction dir) {
                   new_node->right->parent = new_node;
                }
                n->right = n->middle;
-               if (promoted_val == 16) {
-                  fprintf(stderr, "Yes. Here I am.\n");
-                  //treeprint(parent);
-               }
                break;
             case middle: //Rearrange for middle
                parent->mid_right = new_node;
@@ -395,17 +358,15 @@ static node * mrmval(float val, node * top_node) {
    //value.
    switch(val_to_switch) {
       case left:
-         //fprintf(stderr, "Left val must be switched.\n");
-         //float temp = node_to_swap->ldata;
          if (curr->is3node) {
-            fprintf(stderr, "In 3node leaf case for left swap.\n");
+            //fprintf(stderr, "In 3node leaf case for left swap.\n");
             node_to_swap->ldata = curr->rdata;
             curr->rdata = 0;
             curr->is2node = true;
             curr->is3node = false;
          }
          else {
-            fprintf(stderr, "In 2node leaf case for left swap.\n");
+            //fprintf(stderr, "In 2node leaf case for left swap.\n");
             node_to_swap->ldata = curr->ldata;
             curr->ldata = 0;
             curr->is2node = false;
@@ -413,7 +374,7 @@ static node * mrmval(float val, node * top_node) {
          break;
       case right:
          if (curr->is3node) {
-            fprintf(stderr, "In 3node leaf case for right swap.\n");
+            //fprintf(stderr, "In 3node leaf case for right swap.\n");
             node_to_swap->rdata = curr->ldata;
             curr->ldata = curr->rdata;
             curr->rdata = 0;
@@ -421,7 +382,7 @@ static node * mrmval(float val, node * top_node) {
             curr->is3node = false;
          }
          else {
-            fprintf(stderr, "In 2node leaf case for right swap.\n");
+            //fprintf(stderr, "In 2node leaf case for right swap.\n");
             node_to_swap->rdata = curr->ldata;
             curr->ldata = 0;
             curr->is2node = false;
@@ -429,7 +390,7 @@ static node * mrmval(float val, node * top_node) {
          break;
       //The value wasn't found! Should NOT happen during diagnostics.
       case middle:
-         fprintf(stderr, "Value not found!\n");
+         //fprintf(stderr, "Value not found!\n");
          return NULL;
    }
    //2nd loop: Pointer reorganisation, traverse upwards when necessary.
@@ -444,7 +405,7 @@ static node * mrmval(float val, node * top_node) {
       direction which_child = discern_childhood(curr, curr->parent);
       switch(which_child) {
          case error:
-            fprintf(stderr, "AN ERROR OCCURRED.\n");
+            fprintf(stderr, "Error: A child was adopted by another parent\n");
             return NULL;
          case left:
             if (parent->is3node) {
@@ -452,8 +413,8 @@ static node * mrmval(float val, node * top_node) {
                //and sibling over and graft the sibling's left branch
                //over to curr's right branch.
                if (mchild->is3node) {
-                  fprintf(stderr, 
-                  "In left case for parent = 3node, mchild = 3node\n");
+                  //fprintf(stderr, 
+                  //"In left case for parent = 3node, mchild = 3node\n");
                   curr->ldata = parent->ldata;
                   parent->ldata = mchild->ldata;
                   mchild->ldata = mchild->rdata;
@@ -468,8 +429,8 @@ static node * mrmval(float val, node * top_node) {
                   mchild->middle = NULL;
                }
                else if (rchild->is3node) {
-                  fprintf(stderr, 
-                  "In left case for parent = 3node, rchild = 3node\n");
+                  //fprintf(stderr, 
+                  //"In left case for parent = 3node, rchild = 3node\n");
                   curr->ldata = parent->ldata;
                   parent->ldata = mchild->ldata;
                   mchild->ldata = parent->rdata;
@@ -492,7 +453,7 @@ static node * mrmval(float val, node * top_node) {
                else { //Use the parent's "extra" value for help!
                   //This is currently done "my" way. If it doesn't work
                   //I'm reverting to the default (for all three cases).
-                  fprintf(stderr, "In parent help case for left node.\n");
+                  //fprintf(stderr, "In parent help case for left node.\n");
                   curr->ldata = parent->ldata;
                   curr->rdata = mchild->ldata;
                   parent->ldata = parent->rdata;
@@ -500,7 +461,6 @@ static node * mrmval(float val, node * top_node) {
                   //mchild->ldata = 0; uneccessary b/c of modmem!
                   curr->middle = mchild->left;
                   curr->right = mchild->right;
-                  //fprintf(stderr, "Correct case reached.\n");
                   if (curr->middle != NULL && curr->right != NULL) {
                      curr->middle->parent = curr;
                      curr->right->parent = curr;
@@ -514,8 +474,8 @@ static node * mrmval(float val, node * top_node) {
             } //End 3-node parent case
             else { //Parent is a 2-node.
                if (rchild->is3node) {
-                  fprintf(stderr, 
-                  "In left case for parent = 2node, rchild = 3node\n");
+                  //fprintf(stderr, 
+                  //"In left case for parent = 2node, rchild = 3node\n");
                   curr->ldata = parent->ldata;
                   parent->ldata = rchild->ldata;
                   rchild->ldata = rchild->rdata;
@@ -533,8 +493,8 @@ static node * mrmval(float val, node * top_node) {
                   //Merge parent into nonempty sibling node.
                   //fprintf(stderr, "Inside delete case for lchild, 2 node"
                   //                " parent and sibling.\n");
-                  fprintf(stderr, 
-                  "In left case for parent = 2node, rchild = 2node\n");
+                  //fprintf(stderr, 
+                  //"In left case for parent = 2node, rchild = 2node\n");
                   rchild->rdata = rchild->ldata;
                   rchild->ldata = parent->ldata;
                   parent->ldata = 0;
@@ -555,16 +515,13 @@ static node * mrmval(float val, node * top_node) {
                   if (d == left) {
                      curr->left = curr->right;
                      curr->right = NULL;
-                     //if (curr->left && curr->right)
-                     //   fprintf(stderr, "Uh oh!\n");
                   }
                   else if (d == middle) {
                      curr->middle = curr->right;
                      curr->right = NULL;
                   }
                   else if (d == no_parent) {
-                     fprintf(stderr, "I have no parent.\n");
-                     //curr->middle = rchild;
+                     //fprintf(stderr, "I have no parent.\n");
                      return rchild; //curr;
                   }
                } //End case for child with 2 node parent & sibling.
@@ -573,8 +530,8 @@ static node * mrmval(float val, node * top_node) {
          case right:
             if (parent->is3node) {
                if (mchild->is3node) {
-                  fprintf(stderr, 
-                  "In right case for parent = 3node, mchild = 3node\n");
+                  //fprintf(stderr, 
+                  //"In right case for parent = 3node, mchild = 3node\n");
                   curr->ldata = parent->rdata;
                   parent->rdata = mchild->rdata;
                   mchild->rdata = 0;
@@ -588,8 +545,8 @@ static node * mrmval(float val, node * top_node) {
                   mchild->middle = NULL;
                }
                else if (lchild->is3node) {
-                 fprintf(stderr, 
-                 "In right case for parent = 3node, lchild = 3node\n");
+                 //fprintf(stderr, 
+                 //"In right case for parent = 3node, lchild = 3node\n");
                  curr->ldata = parent->rdata;
                  parent->rdata = mchild->ldata;
                  mchild->ldata = parent->ldata;
@@ -610,7 +567,7 @@ static node * mrmval(float val, node * top_node) {
                }
                else { //Make 2 node by bringing parent's rval down & merging
                       //the middle node in.
-                  fprintf(stderr, "In parent help case for right node.\n");
+                  //fprintf(stderr, "In parent help case for right node.\n");
                   curr->rdata = parent->rdata;
                   curr->ldata = mchild->ldata;
                   parent->rdata = 0;
@@ -629,8 +586,8 @@ static node * mrmval(float val, node * top_node) {
             }
             else { //Parent is 2node.
                if (lchild->is3node) {
-                  fprintf(stderr, 
-                  "In right case for parent = 2node, lchild = 3node\n");
+                  //fprintf(stderr, 
+                  //"In right case for parent = 2node, lchild = 3node\n");
                   curr->ldata = parent->ldata;
                   parent->ldata = lchild->rdata;
                   lchild->rdata = 0;
@@ -644,10 +601,8 @@ static node * mrmval(float val, node * top_node) {
                   lchild->middle = NULL;
                }
                else { //Merge parent into sibling node, promote curr.
-                  //fprintf(stderr, "Inside delete case for rchild, 2 node"
-                  //                " parent and sibling.\n");
-                  fprintf(stderr, 
-                  "In right case for parent = 2node, lchild = 2node\n");
+                  //fprintf(stderr, 
+                  //"In right case for parent = 2node, lchild = 2node\n");
                   lchild->rdata = parent->ldata;
                   parent->ldata = 0;
                   lchild->middle = lchild->right;//curr->right;
@@ -661,24 +616,16 @@ static node * mrmval(float val, node * top_node) {
                   curr = parent;
                   curr->right = NULL;
                   direction d = discern_childhood(curr, curr->parent);
-                  //TODO: I believe I duplicate a tree branch here!
-                  //if (d == left) {
-                  //   curr->left = lchild;
-                  //}
-                  /*else*/ if (d == right) {
+                   if (d == right) {
                      curr->right = curr->left;
                      curr->left = NULL;
-                     //if (curr->left && curr->right)
-                     //   fprintf(stderr, "Uh oh!\n");
                   }
                   else if (d == middle) {
                      curr->middle = curr->left;
                      curr->left = NULL;
-                     //if (curr->left && curr->middle)
-                     //   fprintf(stderr, "Uh oh!\n");
                   }
                   else if (d == no_parent) {
-                     fprintf(stderr, "I have no parent\n");
+                     //fprintf(stderr, "I have no parent\n");
                      return lchild;
                   }
                }
@@ -688,8 +635,8 @@ static node * mrmval(float val, node * top_node) {
             //Since this is the middle case, it's one hop either way,
             //*and* my parent is a guaranteed 3-node.
             if (lchild->is3node) {
-               fprintf(stderr, 
-               "In middle case for parent = 3node, lchild = 3node\n");
+               //fprintf(stderr, 
+               //"In middle case for parent = 3node, lchild = 3node\n");
                curr->ldata = parent->ldata;
                parent->ldata = lchild->rdata;
                lchild->rdata = 0;
@@ -705,8 +652,8 @@ static node * mrmval(float val, node * top_node) {
                lchild->middle = NULL;
             }
             else if (rchild->is3node) {
-               fprintf(stderr, 
-               "In middle case for parent = 3node, rchild = 3node\n");
+               //fprintf(stderr, 
+               //"In middle case for parent = 3node, rchild = 3node\n");
                curr->ldata = parent->rdata;
                parent->rdata = rchild->ldata;
                rchild->ldata = rchild->rdata;
@@ -725,7 +672,7 @@ static node * mrmval(float val, node * top_node) {
             //Use either sibling with parent to make new 3-node.
             //Here I'll just use the left child.
             else {
-               fprintf(stderr, "In parent help case for middle node.\n");
+               //fprintf(stderr, "In parent help case for middle node.\n");
                lchild->rdata = parent->ldata;
                parent->ldata = parent->rdata;
                parent->rdata = 0;

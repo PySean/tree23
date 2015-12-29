@@ -9,25 +9,24 @@
 #define DEFAULT_INSERTS 100000ULL
 #endif
 
+#ifndef DEFAULT_DELETES
+#define DEFAULT_DELETES DEFAULT_INSERTS / 2
+#endif
+
 /*
  * "main.c", by Sean Soderman
  * Simply tests the 2-3 tree functions I've implemented.
  */
-//Debug printing function that exposes all values within a node.
-//TODO: Add in ability to add random values and remove n of them,
-//where n is the number of random values added (of course). Perhaps
-//do a time benchmark too.
-void nodecheck(node * n);
 //Runs a standard test of the program using 100,000 
-//randomised insertions/deletions.
+//randomised insertions and 50,000 deletions.
 void treetest(uint64_t num_to_insert, uint64_t num_to_delete, char * filename);
 
 int main(int argc, char * argv[]) {
    if (argc < 3) {
       fprintf(stderr, "No options specified. Will run standard test.\n");
-      fprintf(stderr, "Usage: %s [num_to_insert] [num_to_delete] [filename]\n", 
-      argv[0]);
-      treetest(DEFAULT_INSERTS, DEFAULT_INSERTS, NULL);
+      fprintf(stderr, "Usage: %s [num_to_insert] [num_to_delete]" 
+      " [filename]\n", argv[0]);
+      treetest(DEFAULT_INSERTS, DEFAULT_DELETES, NULL);
    }
    else {
       uint64_t num_to_insert = (uint64_t)atoll(argv[1]);
@@ -35,30 +34,6 @@ int main(int argc, char * argv[]) {
       char * filename = argv[3];
       treetest(num_to_insert, num_to_delete, filename);
    }
-   /*
-   tree * t = create();
-   int i = 1998;
-   insert(20, t);
-   insert(500, t);
-   insert(5, t);
-   insert(12, t);
-   for (i; i < 100000;  i++) {
-      insert(i , t);
-   }
-   insert(15, t);
-   insert(61, t);
-   insert(100, t);
-   insert(21, t);
-   insert(16, t);
-   insert(56, t); 
-   insert(64, t);
-   rmval(46, t);
-   rmval(100, t);
-   rmval(15, t);
-   rmval(16, t);
-   treeprint(t->root);
-   deltree(t);
-   */
    return 0;
 }
 
@@ -95,26 +70,30 @@ void treetest(uint64_t num_to_insert, uint64_t num_to_delete, char * filename) {
    //fill an array with random numbers first, then insert and delete
    //them all within two one-line for-loops.
    float * test_array = malloc(sizeof(float) * testbuflen);
+   //If a filename was specified, dump all values that will be deleted
+   //into the newly created file.
    if (filename != NULL)
-      fdump = fopen("debug.txt", "w+");
+      fdump = fopen(filename, "w+");
    for (i; i < testbuflen; i++) {
       test_array[i] = (float)(rand());
       if (fdump != NULL)
          fprintf(fdump, "%f\n", test_array[i]);
    }
-   //fclose(fdump);
+   if (filename != NULL)
+      fclose(fdump);
    clock_t start_time = clock();
    for (i = 0; i < testbuflen; i++)
       insert(test_array[i], t);
    for (i = 0; i < num_to_delete; i++) {
-      fprintf(stderr, "Removing %f\n", test_array[i]);
+      //fprintf(stderr, "Removing %f\n", test_array[i]);
       rmval(test_array[i], t);
    }
    clock_t end_time = clock();
-   treeprint(t->root);
    printf("Runtime in clock ticks: %li, seconds: %f\n", 
           (end_time - start_time),
           (float)(end_time - start_time) / CLOCKS_PER_SEC);
+   printf("**Tree remnants incoming**\n");
+   treeprint(t->root);
    deltree(t);
    free(test_array);
 }
