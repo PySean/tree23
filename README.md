@@ -19,9 +19,9 @@ If you want to only see whether the tree's insertion works or not, specify
 0 as the number of elements you wish to delete.
 
 Lastly, `[filename]` specifies an output file you can print the values that
-will be deleted to, if you wish. All values are randomly generated. It is
-completely optional however and `./mktree` with the first two arguments 
-will run with what you've given it.
+will be deleted to, if you wish. All values are floating point, and
+randomly generated. It is completely optional however and `./mktree` with 
+the first two arguments will run with what you've given it.
 
 ##History
 In the year 2013, after completing my Data Structures course, I figured that
