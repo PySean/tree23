@@ -8,7 +8,20 @@ A 2-3 tree implemented in C.
 any non-standard features or extensions, so any version of gcc should suffice.
 
 ##Usage (for now)
-   make && ./mktree
+First, call `make`, then:
+`./mktree [num_to_insert & num_to_delete] [filename]`
+You must specify both the number of items to insert and delete, otherwise the
+program will run the standard test of 100,000 insertions followed by 50,000
+deletions. At the end, the values left within the tree are printed, so you
+can verify the tree's correctness.
+
+If you want to only see whether the tree's insertion works or not, specify
+0 as the number of elements you wish to delete.
+
+Lastly, `[filename]` specifies an output file you can print the values that
+will be deleted to, if you wish. All values are randomly generated. It is
+completely optional however and `./mktree` with the first two arguments 
+will run with what you've given it.
 
 ##History
 In the year 2013, after completing my Data Structures course, I figured that
