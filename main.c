@@ -5,6 +5,10 @@
 #include <time.h>
 #include "tree23.h"
 
+#ifndef DEFAULT_INSERTS
+#define DEFAULT_INSERTS 100000ULL
+#endif
+
 /*
  * "main.c", by Sean Soderman
  * Simply tests the 2-3 tree functions I've implemented.
@@ -16,20 +20,20 @@
 void nodecheck(node * n);
 //Runs a standard test of the program using 100,000 
 //randomised insertions/deletions.
-void standard_test();
-//Runs a customised test specified by the user.
-void custom_test(uint64_t num_to_insert, char * filename);
+void treetest(uint64_t num_to_insert, uint64_t num_to_delete, char * filename);
 
 int main(int argc, char * argv[]) {
-   if (argc < 2) {
+   if (argc < 3) {
       fprintf(stderr, "No options specified. Will run standard test.\n");
-      fprintf(stderr, "Usage: %s [num_to_insert] [filename]\n", argv[0]);
-      standard_test();
+      fprintf(stderr, "Usage: %s [num_to_insert] [num_to_delete] [filename]\n", 
+      argv[0]);
+      treetest(DEFAULT_INSERTS, DEFAULT_INSERTS, NULL);
    }
    else {
       uint64_t num_to_insert = (uint64_t)atoll(argv[1]);
-      char * filename = argv[2];
-      custom_test(num_to_insert, filename);
+      uint64_t num_to_delete = (uint64_t)atoll(argv[2]);
+      char * filename = argv[3];
+      treetest(num_to_insert, num_to_delete, filename);
    }
    /*
    tree * t = create();
@@ -69,11 +73,17 @@ void nodecheck(node * n) {
                     n->ldata, n->mdata, n->rdata, arr[n->is2node],
                     arr[n->is3node], arr[n->is4node]);
 }
-//Runs a standard test of the program using 100,000 insertions/deletions
-void standard_test() {
-   int testbuflen = 100000;
+//Runs a tree test of the program using a user-specified
+//number of insertions/deletions.
+void treetest(uint64_t num_to_insert, uint64_t num_to_delete, char * filename) {
+   uint64_t testbuflen = num_to_insert;
    int i = 0;
    time_t seed = time(NULL);
+   FILE * fdump = NULL;
+   //Make sure the usr can't try deleting more than was inserted (nothing
+   //would happen anyway, but the test buffer is num_to_insert floats long.)
+   num_to_delete = num_to_delete > num_to_insert ? 
+                                   num_to_insert : num_to_delete;
    if (errno == EOVERFLOW) {
       fprintf(stderr, "It's at least the year 2038! I've probably got a wife,"
                       " kids, and a Ph.D! Update your system please!\n");
@@ -85,27 +95,26 @@ void standard_test() {
    //fill an array with random numbers first, then insert and delete
    //them all within two one-line for-loops.
    float * test_array = malloc(sizeof(float) * testbuflen);
-   //FILE * fdump = fopen("debug.txt", "w+"); //Test output file...
+   if (filename != NULL)
+      fdump = fopen("debug.txt", "w+");
    for (i; i < testbuflen; i++) {
       test_array[i] = (float)(rand());
-      //fprintf(fdump, "%f\n", test_array[i]);
+      if (fdump != NULL)
+         fprintf(fdump, "%f\n", test_array[i]);
    }
    //fclose(fdump);
    clock_t start_time = clock();
-
    for (i = 0; i < testbuflen; i++)
       insert(test_array[i], t);
-   for (i = 0; i < testbuflen; i++) {
+   for (i = 0; i < num_to_delete; i++) {
       fprintf(stderr, "Removing %f\n", test_array[i]);
-      rmval(test_array[i], t); //TODO: Problem in rmval...*sigh*
+      rmval(test_array[i], t);
    }
    clock_t end_time = clock();
    treeprint(t->root);
-   //FIXME: Probably want the time in ms.
-   //printf("Runtime in seconds: %li\n", (end_time - start_time) / CLOCKS_PER_SEC);
+   printf("Runtime in clock ticks: %li, seconds: %f\n", 
+          (end_time - start_time),
+          (float)(end_time - start_time) / CLOCKS_PER_SEC);
    deltree(t);
-}
-//Runs a customised test specified by the user.
-void custom_test(uint64_t num_to_insert, char * filename) {
-
+   free(test_array);
 }

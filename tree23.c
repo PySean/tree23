@@ -319,16 +319,24 @@ void rmval(float val, tree * root) {
    if (top_node->left == NULL) {
       //Works for either 2 or 3-node roots since all nodes are initialised
       //to zero.
-      if (top_node->ldata == val) {
-         top_node->ldata = top_node->rdata;
-         top_node->rdata = 0;
-         top_node->is3node = false;
-         top_node->is2node = true;
+      if (top_node->is3node) {
+         if (top_node->ldata == val) {
+            top_node->ldata = top_node->rdata;
+            top_node->rdata = 0;
+            top_node->is3node = false;
+            top_node->is2node = true;
+         }
+         else if (top_node->rdata == val) {
+            top_node->rdata = 0;
+            top_node->is3node = false;
+            top_node->is2node = true;
+         }
       }
-      else if (top_node->rdata == val) {
-         top_node->rdata = 0;
-         top_node->is3node = false;
-         top_node->is2node = true;
+      else if (top_node->is2node) {
+         if (top_node->ldata == val) {
+            top_node->ldata = 0;
+            top_node->is2node = false;
+         }
       }
       return;
    }
@@ -336,10 +344,7 @@ void rmval(float val, tree * root) {
    node * new_root = mrmval(val, top_node);
    //If my root node has been cleared...
    if (new_root != NULL) {
-     //DEBUG TODO: Ok, so root removal doesn't cause the issue.
-     //fprintf(stderr, "Root removal case entered.\n");
-     //modmem(DEL, top_node);
-     root->root = new_root; //new_root->middle;
+     root->root = new_root;
      modmem(DEL, new_root->parent);
      new_root->parent = NULL;
    }
@@ -363,7 +368,6 @@ static node * mrmval(float val, node * top_node) {
          val_to_switch = curr->ldata == val ? left : right;
          //Once I find the correct value, get to the biggest value of the
          //left subtree, or the smallest value of the right subtree.
-         //curr = curr->left; //FIXME: Temp repl. by new code for test.
          if (val_to_switch == left)
             curr = curr->left;
          else if (val_to_switch == right)
@@ -379,7 +383,6 @@ static node * mrmval(float val, node * top_node) {
             curr = curr->right;
       }
       else {
-        //curr = curr->right //FIXME: Temp repl by new code for test.
         if (val_to_switch == left)
            curr = curr->right;
         else if (val_to_switch == right)
@@ -440,13 +443,6 @@ static node * mrmval(float val, node * top_node) {
       //This is necessary for figuring which branches to move, etc.
       direction which_child = discern_childhood(curr, curr->parent);
       switch(which_child) {
-         case no_parent: //TODO: I don't think this ever gets reached.
-            if (curr->left != NULL)
-               return curr->left;
-            else if (curr->right != NULL)
-               return curr->right;
-            else
-               return curr->middle;
          case error:
             fprintf(stderr, "AN ERROR OCCURRED.\n");
             return NULL;
@@ -562,14 +558,9 @@ static node * mrmval(float val, node * top_node) {
                      //if (curr->left && curr->right)
                      //   fprintf(stderr, "Uh oh!\n");
                   }
-                 /* else if (d == right) {
-                     curr->right = rchild; //Nothing needs to be done here.
-                  }*/
                   else if (d == middle) {
                      curr->middle = curr->right;
                      curr->right = NULL;
-                     //if (curr->left && curr->right)
-                     //   fprintf(stderr, "Uh oh!\n");
                   }
                   else if (d == no_parent) {
                      fprintf(stderr, "I have no parent.\n");
@@ -747,8 +738,6 @@ static node * mrmval(float val, node * top_node) {
                if (lchild->right != NULL)
                   lchild->right->parent = lchild;
                modmem(DEL, curr);
-               //FIXME TODO: Check the other cases for this, this is
-               //different from what I do for the others..
                curr = lchild;
                parent->middle = NULL;
             }
