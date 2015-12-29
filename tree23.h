@@ -32,8 +32,8 @@ typedef struct n {
 }node;
 
 typedef struct t {
-   uint64_t size;
    node * root;
+   //uint64_t size;
 }tree;
 
 //Simply creates and initializes a 2-3 tree.

@@ -31,7 +31,7 @@ int main(int argc, char * argv[]) {
    else {
       uint64_t num_to_insert = (uint64_t)atoll(argv[1]);
       uint64_t num_to_delete = (uint64_t)atoll(argv[2]);
-      char * filename = argv[3];
+      char * filename = argc >= 4 ? argv[3] : NULL;
       treetest(num_to_insert, num_to_delete, filename);
    }
    return 0;
